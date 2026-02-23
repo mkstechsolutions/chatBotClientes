@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MKS Smart Bot - V3.3</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6a11cb; --secondary: #2575fc; --bg: #0b0b1a; --surface: #16162d; --text: #e0e0e0; --danger: #ff4757; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
+        body { background: var(--bg); height: 100vh; display: flex; flex-direction: column; color: var(--text); overflow: hidden; }
+
+        header { background: rgba(22, 22, 45, 0.95); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a2a4a; }
+        .bot-info { display: flex; align-items: center; gap: 10px; }
+        .bot-info img { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--secondary); }
+        .bot-info h1 { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+        .sup-btn { font-size: 10px; background: var(--primary); padding: 5px 12px; border-radius: 12px; cursor: pointer; font-weight: 700; }
+        .dots-btn { font-size: 24px; cursor: pointer; color: var(--secondary); margin-left: 10px; }
+
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; position: relative; }
+        .bot { align-self: flex-start; background: var(--surface); border-bottom-left-radius: 2px; }
+        .user { align-self: flex-end; background: linear-gradient(to right, var(--primary), var(--secondary)); border-bottom-right-radius: 2px; }
+        .bubble img { max-width: 100%; border-radius: 10px; margin-bottom: 8px; display: block; }
+
+        footer { background: #0f0f1f; padding: 15px; display: flex; justify-content: center; gap: 8px; border-top: 1px solid #2a2a4a; flex-wrap: wrap; }
+        .opt-btn { background: #252545; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 600; }
+        
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 15px; overflow-y: auto; }
+        .modal-card { background: var(--surface); padding: 25px; border-radius: 20px; width: 100%; max-width: 500px; }
+        
+        /* Ajuste do "i" conforme solicitado */
+        .help-box { background: #1e1e36; padding: 15px; border-radius: 10px; font-size: 12px; border-left: 4px solid var(--secondary); margin-bottom: 15px; display: none; line-height: 1.5; }
+        .help-box h4 { color: var(--secondary); margin-bottom: 8px; }
+        .example-tag { background: #0b0b1a; padding: 2px 4px; border-radius: 4px; color: #2ecc71; font-weight: bold; }
+
+        .input-group { text-align: left; margin-bottom: 12px; }
+        label { font-size: 10px; font-weight: 700; color: var(--secondary); margin-bottom: 4px; display: block; }
+        input, textarea { width: 100%; padding: 12px; background: #0b0b1a; border: 1px solid #2a2a4a; color: white; border-radius: 10px; }
+
+        .preview-pane { background: #0b0b1a; border: 1px dashed #333; padding: 10px; border-radius: 10px; margin-top: 10px; }
+        #save-status { display: none; background: var(--primary); text-align: center; padding: 10px; border-radius: 10px; margin-top: 10px; font-weight: bold; animation: pulse 1s infinite; }
+
+        .item-row { background: #1f1f3d; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-del { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="bot-info">
+        <img src="https://i.imgur.com/2X8sQ3C.png">
+        <div><h1>MKS Assistant</h1><span>Online</span></div>
+    </div>
+    <div style="display:flex; align-items:center;">
+        <div class="sup-btn" onclick="startSupport()">SUPORTE</div>
+        <div class="dots-btn" onclick="openModal('modal-auth')">⋮</div>
+    </div>
+</header>
+
+<div id="chat-window"></div>
+<div id="typing-indicator" style="display:none; padding: 10px; font-size: 11px; color: #888;">Assistant está digitando...</div>
+<footer id="footer"></footer>
+
+<div id="modal-auth" class="modal">
+    <div class="modal-card" style="text-align: center;">
+        <h2>Acesso Restrito</h2>
+        <input type="password" id="admin-pass" style="margin-top:20px; text-align:center" placeholder="Senha">
+        <button class="opt-btn" style="width:100%; margin-top:15px; background:var(--primary)" onclick="login()">Entrar</button>
+        <button onclick="closeModals()" style="background:none; border:none; color:#555; margin-top:15px; cursor:pointer;">Sair</button>
+    </div>
+</div>
+
+<div id="modal-menu" class="modal">
+    <div class="modal-card">
+        <h2 style="text-align:center; margin-bottom:20px">Configurações</h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+            <div onclick="openConfig()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">➕<br>Novo</div>
+            <div onclick="loadManager()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">⚙️<br>Gerenciar</div>
+            <div onclick="loadHistory()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">📜<br>Leads</div>
+            <div onclick="closeModals()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">❌<br>Fechar</div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-form" class="modal">
+    <div class="modal-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+            <h2 id="form-title">Configurar Item</h2>
+            <div onclick="toggleHelp()" style="cursor:pointer; background:var(--secondary); border-radius:50%; width:25px; height:25px; display:flex; align-items:center; justify-content:center; font-weight:bold">i</div>
+        </div>
+
+        <div id="help-box" class="help-box">
+            <h4>🚀 Como configurar seu Bot</h4>
+            <b>1. Nome do Botão:</b> É a "chave". Se no botão anterior você escreveu <span class="example-tag">Ver Catálogo</span>, este novo item DEVE ter esse mesmo nome.<br><br>
+            <b>2. Imagem:</b> Cole links do Imgur ou Google Drive. <br><i>Ex: https://imgur.com/foto.jpg</i><br><br>
+            <b>3. Mensagem:</b> Use <span class="example-tag">{nome}</span> para o bot ser carinhoso e chamar o cliente pelo nome.<br><br>
+            <b>4. Caminhos:</b> São os botões que aparecerão DEPOIS desta mensagem. Separe por vírgula.<br>
+            <i>Ex: <span class="example-tag">Fazer Pedido, Voltar, Promoções</span></i>
+        </div>
+
+        <input type="hidden" id="edit-id">
+        <div class="input-group"><label>NOME DO BOTÃO (Gatilho)</label><input type="text" id="inp-p" oninput="updatePreview()"></div>
+        <div class="input-group"><label>IMAGEM (URL)</label><input type="text" id="inp-img" oninput="updatePreview()"></div>
+        <div class="input-group"><label>MENSAGEM DO BOT</label><textarea id="inp-r" rows="2" oninput="updatePreview()"></textarea></div>
+        <div class="input-group"><label>CAMINHOS (Botões de saída)</label><input type="text" id="inp-o" placeholder="Pix, Voltar" oninput="updatePreview()"></div>
+
+        <div class="preview-pane">
+            <label style="color:var(--secondary)">PRÉ-VISUALIZAÇÃO</label>
+            <div id="pre-img-box" style="display:none; margin-bottom:5px"><img id="pre-img" src="" style="width:80px; border-radius:5px"></div>
+            <div id="pre-txt" style="font-size:12px; color:#aaa">...</div>
+            <div id="pre-btns" style="display:flex; gap:5px; flex-wrap:wrap; margin-top:5px"></div>
+        </div>
+
+        <div id="save-status">PROCESSANDO...</div>
+        <button id="btn-save" class="opt-btn" style="width:100%; background:var(--primary); margin-top:15px" onclick="saveConfig()">Salvar e Publicar</button>
+        <button onclick="openModal('modal-menu')" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer">Cancelar</button>
+    </div>
+</div>
+
+<div id="modal-manager" class="modal"><div class="modal-card"><h2>Gerenciar</h2><div id="manager-list" style="margin:15px 0; max-height:300px; overflow-y:auto"></div><button onclick="openModal('modal-menu')" class="opt-btn" style="width:100%">Voltar</button></div></div>
+<div id="modal-history" class="modal"><div class="modal-card"><h2>Leads</h2><div id="history-list" style="margin:15px 0; max-height:300px; overflow-y:auto"></div><button onclick="openModal('modal-menu')" class="opt-btn" style="width:100%">Voltar</button></div></div>
+
+<script>
+    const API = "https://script.google.com/macros/s/AKfycbyFwBExe0WqR5_-dMgRA3K1To_2NbMT5UB7S3G0vUsIGUmlE-E32ldey4aFVJ6FxPyG/exec"; 
+    const INSTAGRAM = "https://instagram.com/SEU_USER";
+    let chatData = [], userName = "", session = "S" + Date.now(), isBusy = false;
+
+    async function init() {
+        const r = await fetch(API); chatData = await r.json();
+        botSay("Olá! Qual o seu nome?");
+        renderInput(saveName, "Digite seu nome...");
+    }
+
+    function botSay(t, img = null, cb = null) {
+        document.getElementById('typing-indicator').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('typing-indicator').style.display = 'none';
+            const w = document.getElementById('chat-window');
+            const d = document.createElement('div'); d.className = 'bubble bot';
+            if(img) d.innerHTML += `<img src="${img}">`;
+            d.innerHTML += `<span>${t.replace("{nome}", userName)}</span>`;
+            w.appendChild(d); w.scrollTop = w.scrollHeight;
+            if(cb) cb();
+        }, 1200);
+    }
+
+    function addBubble(t, s) {
+        const w = document.getElementById('chat-window');
+        const d = document.createElement('div'); d.className = `bubble ${s}`; d.innerText = t;
+        w.appendChild(d); w.scrollTop = w.scrollHeight;
+    }
+
+    function renderInput(fn, ph) {
+        const f = document.getElementById('footer');
+        f.innerHTML = `<input type="text" id="main-in" style="flex:1; background:#16162d; border:1px solid #2a2a4a; color:white; padding:12px; border-radius:12px;" placeholder="${ph}">
+                       <button onclick="currentFn()" style="background:var(--primary); border:none; width:45px; height:45px; border-radius:50%; color:white;">➤</button>`;
+        window.currentFn = fn;
+    }
+
+    function saveName() {
+        userName = document.getElementById('main-in').value;
+        if(!userName) return;
+        addBubble(userName, 'user');
+        saveLog("Iniciou");
+        renderStep(1);
+    }
+
+    function renderStep(id) {
+        const s = chatData.find(x => x.ID == id);
+        if(!s) return;
+        botSay(s.Resposta, s.ImagemURL, () => {
+            const f = document.getElementById('footer'); f.innerHTML = '';
+            if(s.Opcoes) s.Opcoes.split(',').forEach(o => {
+                const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = o.trim();
+                b.onclick = () => {
+                    addBubble(o.trim(), 'user'); saveLog(o.trim());
+                    if(o.trim().toLowerCase() === 'voltar') renderStep(1);
+                    else {
+                        const next = chatData.find(x => x.Pergunta.toLowerCase() === o.trim().toLowerCase());
+                        if(next) renderStep(next.ID);
+                    }
+                };
+                f.appendChild(b);
+            });
+        });
+    }
+
+    async function saveLog(m) { fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ sessao: session, nome: userName, mensagem: m })}); }
+
+    function startSupport() {
+        botSay(`${userName}, digite seu WhatsApp para suporte:`);
+        renderInput(async () => {
+            const tel = document.getElementById('main-in').value.replace(/\D/g, '');
+            if(tel.length < 8) return;
+            addBubble(tel, 'user');
+            await saveLog("TEL: " + tel);
+            botSay("Deseja falar comigo por onde agora?", null, () => {
+                const f = document.getElementById('footer'); f.innerHTML = '';
+                const b1 = document.createElement('button'); b1.className = 'opt-btn'; b1.innerText = "WhatsApp";
+                b1.onclick = () => window.open(`https://api.whatsapp.com/send?phone=55${tel}`, '_blank');
+                const b2 = document.createElement('button'); b2.className = 'opt-btn'; b2.innerText = "Instagram";
+                b2.onclick = () => window.location.href = INSTAGRAM;
+                const b3 = document.createElement('button'); b3.className = 'opt-btn'; b3.innerText = "Voltar ao Chat";
+                b3.onclick = () => renderStep(1);
+                f.appendChild(b1); f.appendChild(b2); f.appendChild(b3);
+            });
+        }, "DDD + Numero");
+    }
+
+    function openModal(id) { closeModals(); document.getElementById(id).style.display = 'flex'; }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+    function toggleHelp() { const b = document.getElementById('help-box'); b.style.display = b.style.display === 'none' ? 'block' : 'none'; }
+    function login() { if(document.getElementById('admin-pass').value === '2027') openModal('modal-menu'); else alert("Erro"); }
+
+    function updatePreview() {
+        document.getElementById('pre-txt').innerText = document.getElementById('inp-r').value || "...";
+        const img = document.getElementById('inp-img').value;
+        const imgBox = document.getElementById('pre-img-box');
+        if(img) { imgBox.style.display='block'; document.getElementById('pre-img').src=img; } else imgBox.style.display='none';
+        const bBox = document.getElementById('pre-btns'); bBox.innerHTML = '';
+        const opt = document.getElementById('inp-o').value;
+        if(opt) opt.split(',').forEach(o => {
+            const b = document.createElement('div'); b.className='opt-btn'; b.style.fontSize='8px'; b.innerText=o.trim();
+            bBox.appendChild(b);
+        });
+    }
+
+    async function saveConfig() {
+        if(isBusy) return;
+        isBusy = true; document.getElementById('save-status').style.display = 'block';
+        const data = { tipo: 'config', id: document.getElementById('edit-id').value, pergunta: document.getElementById('inp-p').value, res: document.getElementById('inp-r').value, opcoes: document.getElementById('inp-o').value, img: document.getElementById('inp-img').value };
+        await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data)});
+        location.reload();
+    }
+
+    function loadManager() {
+        openModal('modal-manager');
+        const l = document.getElementById('manager-list'); l.innerHTML = '';
+        chatData.forEach(i => {
+            const d = document.createElement('div'); d.className = 'item-row';
+            d.innerHTML = `<span>${i.Pergunta}</span><div><button class="opt-btn" style="padding:5px" onclick='openConfig(${JSON.stringify(i).replace(/'/g, "&apos;")})'>Edit</button><button class="btn-del" onclick="deleteItem('${i.ID}')">X</button></div>`;
+            l.appendChild(d);
+        });
+    }
+
+    async function deleteItem(id) { if(confirm("Apagar?")) { await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({tipo: 'delete', id: id})}); location.reload(); } }
+
+    async function loadHistory() {
+        openModal('modal-history');
+        const l = document.getElementById('history-list'); l.innerHTML = 'Carregando...';
+        const r = await fetch(API + "?res=logs"); const logs = await r.json();
+        l.innerHTML = '';
+        logs.reverse().forEach((row) => {
+            if(row[1] === "Sessao" || !row[2]) return;
+            let msg = row[3];
+            // Se a mensagem contém números (suposto telefone), cria link
+            if(/\d{8,}/.test(msg)) {
+                const num = msg.match(/\d+/)[0];
+                msg = msg.replace(num, `<a href="https://api.whatsapp.com/send?phone=55${num}" target="_blank" style="color:var(--secondary); font-weight:bold">${num}</a>`);
+            }
+            l.innerHTML += `<div style="background:#1f1f3d; padding:10px; border-radius:10px; margin-bottom:5px; font-size:11px"><b>${row[2]}</b>: ${msg}</div>`;
+        });
+    }
+
+    function openConfig(item = null) {
+        openModal('modal-form');
+        document.getElementById('edit-id').value = item ? item.ID : "";
+        document.getElementById('inp-p').value = item ? item.Pergunta : "";
+        document.getElementById('inp-r').value = item ? item.Resposta : "";
+        document.getElementById('inp-o').value = item ? item.Opcoes : "";
+        document.getElementById('inp-img').value = item ? (item.ImagemURL || "") : "";
+        updatePreview();
+    }
+
+    init();
+</script>
+</body>
+</html>
