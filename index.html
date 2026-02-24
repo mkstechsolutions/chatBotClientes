@@ -151,7 +151,7 @@
 <div id="modal-history" class="modal"><div class="modal-card"><h2>📜 Leads e Pedidos</h2><div id="history-list" style="margin:15px 0; max-height:350px; overflow-y:auto"></div><button onclick="openModal('modal-menu')" class="opt-btn" style="width:100%">Voltar</button></div></div>
 
 <script>
-    const API = "https://script.google.com/macros/s/AKfycbxrQseIr-LDVNhpBmHPdxz07d8w9lcN-6KPa6Hq7FZ7AF6921zcVp0CysBV3Sb5LhY/exec"; 
+    const API = "https://script.google.com/macros/s/AKfycbyPAHOcblYzGY1LqAThspHlazuXWUKp5TNbFoiRbTemjym2PBETi0BrJHgVKfGhz-Uu/exec"; 
     let chatData = [], userName = "Cliente", session = "S" + Date.now(), isBusy = false, carrinho = [];
 
     async function init() { const r = await fetch(API); chatData = await r.json(); botSay("Olá! Qual o seu nome?"); renderInput(saveName, "Seu nome..."); }
@@ -333,18 +333,29 @@
         const r = await fetch(API + "?res=logs"); const logs = await r.json(); l.innerHTML = '';
         logs.reverse().forEach((row) => {
             if(!row[2]) return;
-            let msg = row[3]; let typeClass = '';
-            if(msg.includes("PRODS:") || msg.includes("WHATSAPP:")) typeClass = 'lead-order';
-            if(msg.includes("SUPORTE:")) typeClass = 'lead-support';
+            let msgOriginal = row[3]; 
+            let msgFormatada = msgOriginal;
+            let typeClass = '';
             
-            const phoneMatch = msg.match(/\d{8,}/);
+            if(msgOriginal.includes("PRODS:") || msgOriginal.includes("WHATSAPP:")) typeClass = 'lead-order';
+            if(msgOriginal.includes("SUPORTE:")) typeClass = 'lead-support';
+            
+            const phoneMatch = msgOriginal.match(/\d{10,}/);
             if(phoneMatch) { 
-                const num = phoneMatch[0]; 
-                msg = msg.replace(num, `<a href="https://api.whatsapp.com/send?phone=55${num}" target="_blank" style="color:white; font-weight:bold; text-decoration: underline;">${num}</a>`); 
+                const num = phoneMatch[0];
+                const nomeCliente = row[2];
+                
+                // Extrair apenas PRODS e DETALHES do log original
+                let prodsPart = msgOriginal.match(/PRODS:.*?(?=\| WHATSAPP|$)/i);
+                let resumoPedido = prodsPart ? prodsPart[0].trim() : "Solicitação de contato";
+                
+                // Monta a mensagem curta com a confirmação final "Confere?"
+                const textoWhatsApp = encodeURIComponent(`Olá ${nomeCliente}, vi seu pedido aqui no sistema:\n\n${resumoPedido}\n\nConfere?`);
+                msgFormatada = msgOriginal.replace(num, `<a href="https://api.whatsapp.com/send?phone=55${num}&text=${textoWhatsApp}" target="_blank" style="color:white; font-weight:bold; text-decoration: underline;">${num}</a>`); 
             }
 
             const date = row[0] ? new Date(row[0]).toLocaleString('pt-BR') : 'Agora';
-            l.innerHTML += `<div class="lead-item ${typeClass}"><span class="lead-date">${date}</span><b>${row[2]}</b>: ${msg}</div>`;
+            l.innerHTML += `<div class="lead-item ${typeClass}"><span class="lead-date">${date}</span><b>${row[2]}</b>: ${msgFormatada}</div>`;
         });
     }
 
