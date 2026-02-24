@@ -3,104 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MKS Smart Bot - V3.3</title>
+    <title>MKS Smart Bot - Full Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #6a11cb; --secondary: #2575fc; --bg: #0b0b1a; --surface: #16162d; --text: #e0e0e0; --danger: #ff4757; }
+        :root { --primary: #6a11cb; --secondary: #2575fc; --bg: #0b0b1a; --surface: #16162d; --text: #e0e0e0; --danger: #ff4757; --success: #00ff88; --warning: #f1c40f; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
+        html, body { height: 100%; width: 100%; overflow: hidden; position: fixed; }
+        body { background: var(--bg); height: 100dvh; display: flex; flex-direction: column; color: var(--text); }
         
-        /* Ajuste para travar o scroll lateral e altura real no mobile */
-        html, body { 
-            height: 100%; 
-            width: 100%; 
-            overflow: hidden; 
-            position: fixed; 
-        }
-        
-        body { 
-            background: var(--bg); 
-            height: 100dvh; /* Altura dinâmica para ignorar barras do navegador */
-            display: flex; 
-            flex-direction: column; 
-            color: var(--text); 
-        }
-
-        header { 
-            background: rgba(22, 22, 45, 0.95); 
-            padding: 10px 15px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            border-bottom: 1px solid #2a2a4a; 
-            flex-shrink: 0;
-        }
+        header { background: rgba(22, 22, 45, 0.95); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a2a4a; flex-shrink: 0; }
         .bot-info { display: flex; align-items: center; gap: 10px; }
         .bot-info img { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--secondary); }
-        .bot-info h1 { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .bot-status { display: flex; flex-direction: column; }
+        .bot-info h1 { font-size: 11px; font-weight: 700; text-transform: uppercase; line-height: 1.2; }
+        .status-tag { font-size: 9px; color: #888; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+        .dot { color: var(--success); font-size: 12px; line-height: 1; }
 
         .sup-btn { font-size: 10px; background: var(--primary); padding: 5px 12px; border-radius: 12px; cursor: pointer; font-weight: 700; }
         .dots-btn { font-size: 24px; cursor: pointer; color: var(--secondary); margin-left: 10px; }
-
-        #chat-window { 
-            flex: 1; 
-            padding: 15px; 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
-            -webkit-overflow-scrolling: touch; 
-        }
+        
+        #chat-window { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
         .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; position: relative; word-wrap: break-word; }
         .bot { align-self: flex-start; background: var(--surface); border-bottom-left-radius: 2px; }
         .user { align-self: flex-end; background: linear-gradient(to right, var(--primary), var(--secondary)); border-bottom-right-radius: 2px; }
         .bubble img { max-width: 100%; border-radius: 10px; margin-bottom: 8px; display: block; height: auto; }
-
-        footer { 
-            background: #0f0f1f; 
-            padding: 12px; 
-            display: flex; 
-            justify-content: center; 
-            gap: 6px; 
-            border-top: 1px solid #2a2a4a; 
-            flex-wrap: wrap; 
-            flex-shrink: 0;
-        }
+        
+        footer { background: #0f0f1f; padding: 12px; display: flex; justify-content: center; gap: 6px; border-top: 1px solid #2a2a4a; flex-wrap: wrap; flex-shrink: 0; }
         .opt-btn { background: #252545; color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; }
-        
-        .modal { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.95); 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 2000; 
-            padding: 15px; 
-        }
-        .modal-card { 
-            background: var(--surface); 
-            padding: 20px; 
-            border-radius: 20px; 
-            width: 100%; 
-            max-width: 450px; 
-            max-height: 90dvh; 
-            overflow-y: auto; 
-        }
-        
-        .help-box { background: #1e1e36; padding: 15px; border-radius: 10px; font-size: 12px; border-left: 4px solid var(--secondary); margin-bottom: 15px; display: none; line-height: 1.5; }
-        .help-box h4 { color: var(--secondary); margin-bottom: 8px; }
-        .example-tag { background: #0b0b1a; padding: 2px 4px; border-radius: 4px; color: #2ecc71; font-weight: bold; }
+        .cart-btn { background: var(--success); color: #000; border: none; padding: 10px 14px; border-radius: 20px; cursor: pointer; font-weight: bold; }
 
-        .input-group { text-align: left; margin-bottom: 12px; }
-        label { font-size: 10px; font-weight: 700; color: var(--secondary); margin-bottom: 4px; display: block; }
-        input, textarea { width: 100%; padding: 12px; background: #0b0b1a; border: 1px solid #2a2a4a; color: white; border-radius: 10px; font-size: 14px; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 15px; }
+        .modal-card { background: var(--surface); padding: 20px; border-radius: 20px; width: 100%; max-width: 450px; max-height: 90dvh; overflow-y: auto; }
+        
+        .help-box { background: #1e1e36; padding: 15px; border-radius: 10px; font-size: 12px; border-left: 4px solid var(--secondary); margin-bottom: 15px; display: none; line-height: 1.6; }
+        .step-info { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .example-tag { background: #0b0b1a; padding: 2px 5px; border-radius: 4px; color: #2ecc71; font-weight: bold; }
+        
+        label { font-size: 10px; font-weight: 700; color: var(--secondary); margin-bottom: 4px; display: block; text-align: left;}
+        input, textarea { width: 100%; padding: 12px; background: #0b0b1a; border: 1px solid #2a2a4a; color: white; border-radius: 10px; font-size: 14px; margin-bottom: 10px;}
+        
+        .check-group { display: flex; align-items: center; gap: 10px; background: #0b0b1a; padding: 12px; border-radius: 10px; border: 1px solid #2a2a4a; margin-bottom: 12px; cursor: pointer; }
+        .check-group input { width: auto; margin-bottom: 0; }
+
+        .suggestion-box { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+        .sug-tag { font-size: 9px; background: #333; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
 
         .preview-pane { background: #0b0b1a; border: 1px dashed #333; padding: 10px; border-radius: 10px; margin-top: 10px; }
+        
         #save-status { display: none; background: var(--primary); text-align: center; padding: 10px; border-radius: 10px; margin-top: 10px; font-weight: bold; animation: pulse 1s infinite; }
-
+        
+        .lead-item { background: #1f1f3d; padding: 12px; border-radius: 12px; margin-bottom: 8px; font-size: 11px; border-left: 4px solid var(--secondary); text-align: left; }
+        .lead-order { border-left-color: var(--warning); background: #3d3d1f; }
+        .lead-support { border-left-color: var(--danger); background: #3d1f1f; }
+        .lead-date { font-size: 9px; color: #888; display: block; margin-bottom: 4px; }
+        
         .item-row { background: #1f1f3d; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .item-row span { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .btn-del { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .btn-del { background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
@@ -110,34 +68,30 @@
 <header>
     <div class="bot-info">
         <img src="https://i.imgur.com/2X8sQ3C.png">
-        <div><h1>MKS Assistant</h1><span>Online</span></div>
+        <div class="bot-status"><h1>MKS Sales</h1><span class="status-tag"><span class="dot">●</span> Online</span></div>
     </div>
-    <div style="display:flex; align-items:center;">
-        <div class="sup-btn" onclick="startSupport()">SUPORTE</div>
-        <div class="dots-btn" onclick="openModal('modal-auth')">⋮</div>
-    </div>
+    <div style="display:flex; align-items:center;"><div class="sup-btn" onclick="startSupport()">SUPORTE</div><div class="dots-btn" onclick="openModal('modal-auth')">⋮</div></div>
 </header>
 
 <div id="chat-window"></div>
-<div id="typing-indicator" style="display:none; padding: 10px; font-size: 11px; color: #888; flex-shrink:0;">Assistant está digitando...</div>
+<div id="typing-indicator" style="display:none; padding: 10px; font-size: 11px; color: #888;">Assistant está digitando...</div>
 <footer id="footer"></footer>
 
 <div id="modal-auth" class="modal">
     <div class="modal-card" style="text-align: center;">
         <h2>Acesso Restrito</h2>
         <input type="password" id="admin-pass" style="margin-top:20px; text-align:center" placeholder="Senha">
-        <button class="opt-btn" style="width:100%; margin-top:15px; background:var(--primary)" onclick="login()">Entrar</button>
+        <button class="opt-btn" style="width:100%; background:var(--primary)" onclick="login()">Entrar</button>
         <button onclick="closeModals()" style="background:none; border:none; color:#555; margin-top:15px; cursor:pointer;">Sair</button>
     </div>
 </div>
 
 <div id="modal-menu" class="modal">
     <div class="modal-card">
-        <h2 style="text-align:center; margin-bottom:20px">Configurações</h2>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
             <div onclick="openConfig()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">➕<br>Novo</div>
             <div onclick="loadManager()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">⚙️<br>Gerenciar</div>
-            <div onclick="loadHistory()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">📜<br>Leads</div>
+            <div onclick="loadHistory()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">📜<br>Pedidos</div>
             <div onclick="closeModals()" style="background:#1f1f3d; padding:20px; border-radius:15px; text-align:center; cursor:pointer">❌<br>Fechar</div>
         </div>
     </div>
@@ -146,51 +100,61 @@
 <div id="modal-form" class="modal">
     <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-            <h2 id="form-title" style="font-size:18px;">Configurar Item</h2>
+            <h2>Configurar Item</h2>
             <div onclick="toggleHelp()" style="cursor:pointer; background:var(--secondary); border-radius:50%; width:25px; height:25px; display:flex; align-items:center; justify-content:center; font-weight:bold">i</div>
         </div>
-
         <div id="help-box" class="help-box">
-            <h4>🚀 Como configurar seu Bot</h4>
-            <b>1. Nome do Botão:</b> É a "chave". Se no botão anterior você escreveu <span class="example-tag">Ver Catálogo</span>, este novo item DEVE ter esse mesmo nome.<br><br>
-            <b>2. Imagem:</b> Cole links do Imgur ou Google Drive. <br><i>Ex: https://imgur.com/foto.jpg</i><br><br>
-            <b>3. Mensagem:</b> Use <span class="example-tag">{nome}</span> para o bot ser carinhoso e chamar o cliente pelo nome.<br><br>
-            <b>4. Caminhos:</b> São os botões que aparecerão DEPOIS desta mensagem. Separe por vírgula.<br>
-            <i>Ex: <span class="example-tag">Fazer Pedido, Voltar, Promoções</span></i>
+            <h4>🚀 Manual do Fluxo</h4>
+            <div class="step-info"><b>1. O Gatilho:</b> Se o botão se chama <span class="example-tag">Tênis Nike</span>, crie um item com esse nome exato.</div>
+            <div class="step-info"><b>2. Exemplo Real:</b> Se você quer que o botão "Preços" leve a uma lista, o novo Gatilho deve ser "Preços".</div>
+            <div class="step-info"><b>3. Botões Automáticos:</b> "Voltar" e "Finalizar" são adicionados automaticamente.</div>
+        </div>
+        <input type="hidden" id="edit-id">
+        <label>NOME DO BOTÃO (Gatilho)</label>
+        <input type="text" id="inp-p" oninput="updatePreview()" placeholder="Ex: Catálogo">
+        
+        <label>IMAGEM (URL)</label>
+        <input type="text" id="inp-img" oninput="updatePreview()" placeholder="Link da imagem...">
+        
+        <label>MENSAGEM DO BOT</label>
+        <textarea id="inp-r" rows="2" oninput="updatePreview()" placeholder="Olá {nome}..."></textarea>
+        
+        <div id="price-field-container" style="display:none">
+            <label>PREÇO DO PRODUTO (R$)</label>
+            <input type="text" id="inp-price" oninput="updatePreview()" placeholder="Ex: 199,90">
         </div>
 
-        <input type="hidden" id="edit-id">
-        <div class="input-group"><label>NOME DO BOTÃO (Gatilho)</label><input type="text" id="inp-p" oninput="updatePreview()"></div>
-        <div class="input-group"><label>IMAGEM (URL)</label><input type="text" id="inp-img" oninput="updatePreview()"></div>
-        <div class="input-group"><label>MENSAGEM DO BOT</label><textarea id="inp-r" rows="2" oninput="updatePreview()"></textarea></div>
-        <div class="input-group"><label>CAMINHOS (Separe por vírgula)</label><input type="text" id="inp-o" placeholder="Pix, Voltar" oninput="updatePreview()"></div>
-
+        <label>CAMINHOS (Sugestões abaixo)</label>
+        <div id="suggestion-list" class="suggestion-box"></div>
+        <input type="text" id="inp-o" oninput="updatePreview()" placeholder="Ex: Preços, Cores">
+        
+        <label class="check-group">
+            <input type="checkbox" id="inp-is-prod" onchange="togglePriceInput()">
+            <span>Ativar Botão de Compra (Sacola 🛍️)</span>
+        </label>
+        
         <div class="preview-pane">
             <label style="color:var(--secondary); font-size: 10px;">PRÉ-VISUALIZAÇÃO</label>
-            <div id="pre-img-box" style="display:none; margin-bottom:5px"><img id="pre-img" src="" style="width:60px; border-radius:5px"></div>
-            <div id="pre-txt" style="font-size:12px; color:#aaa">...</div>
-            <div id="pre-btns" style="display:flex; gap:5px; flex-wrap:wrap; margin-top:5px"></div>
+            <div class="bubble bot" style="margin-top:5px; max-width: 100%;">
+                <div id="pre-img-box" style="display:none;"><img id="pre-img" src="" style="width:100%; border-radius:8px;"></div>
+                <span id="pre-txt" style="font-size:13px">...</span>
+            </div>
+            <div id="pre-btns" style="display:flex; gap:5px; flex-wrap:wrap; margin-top:8px"></div>
         </div>
-
         <div id="save-status">PROCESSANDO...</div>
         <button id="btn-save" class="opt-btn" style="width:100%; background:var(--primary); margin-top:15px" onclick="saveConfig()">Salvar e Publicar</button>
         <button onclick="openModal('modal-menu')" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer">Cancelar</button>
     </div>
 </div>
 
-<div id="modal-manager" class="modal"><div class="modal-card"><h2>Gerenciar</h2><div id="manager-list" style="margin:15px 0; max-height:300px; overflow-y:auto"></div><button onclick="openModal('modal-menu')" class="opt-btn" style="width:100%">Voltar</button></div></div>
-<div id="modal-history" class="modal"><div class="modal-card"><h2>Leads</h2><div id="history-list" style="margin:15px 0; max-height:300px; overflow-y:auto"></div><button onclick="openModal('modal-menu')" class="opt-btn" style="width:100%">Voltar</button></div></div>
+<div id="modal-manager" class="modal"><div class="modal-card"><h2>Gerenciar Itens</h2><div id="manager-list" style="margin:15px 0; max-height:350px; overflow-y:auto"></div><button onclick="openModal('modal-menu')" class="opt-btn" style="width:100%">Voltar</button></div></div>
+<div id="modal-history" class="modal"><div class="modal-card"><h2>📜 Leads e Pedidos</h2><div id="history-list" style="margin:15px 0; max-height:350px; overflow-y:auto"></div><button onclick="openModal('modal-menu')" class="opt-btn" style="width:100%">Voltar</button></div></div>
 
 <script>
-    const API = "https://script.google.com/macros/s/AKfycbyFwBExe0WqR5_-dMgRA3K1To_2NbMT5UB7S3G0vUsIGUmlE-E32ldey4aFVJ6FxPyG/exec"; 
-    const INSTAGRAM = "https://instagram.com/SEU_USER";
-    let chatData = [], userName = "", session = "S" + Date.now(), isBusy = false;
+    const API = "https://script.google.com/macros/s/AKfycbxrQseIr-LDVNhpBmHPdxz07d8w9lcN-6KPa6Hq7FZ7AF6921zcVp0CysBV3Sb5LhY/exec"; 
+    let chatData = [], userName = "Cliente", session = "S" + Date.now(), isBusy = false, carrinho = [];
 
-    async function init() {
-        const r = await fetch(API); chatData = await r.json();
-        botSay("Olá! Qual o seu nome?");
-        renderInput(saveName, "Digite seu nome...");
-    }
+    async function init() { const r = await fetch(API); chatData = await r.json(); botSay("Olá! Qual o seu nome?"); renderInput(saveName, "Seu nome..."); }
 
     function botSay(t, img = null, cb = null) {
         document.getElementById('typing-indicator').style.display = 'block';
@@ -199,10 +163,10 @@
             const w = document.getElementById('chat-window');
             const d = document.createElement('div'); d.className = 'bubble bot';
             if(img) d.innerHTML += `<img src="${img}">`;
-            d.innerHTML += `<span>${t.replace("{nome}", userName)}</span>`;
+            d.innerHTML += `<span>${t.replace(/{nome}/g, userName)}</span>`;
             w.appendChild(d); w.scrollTop = w.scrollHeight;
             if(cb) cb();
-        }, 1200);
+        }, 1000);
     }
 
     function addBubble(t, s) {
@@ -213,112 +177,174 @@
 
     function renderInput(fn, ph) {
         const f = document.getElementById('footer');
-        f.innerHTML = `<input type="text" id="main-in" style="flex:1; background:#16162d; border:1px solid #2a2a4a; color:white; padding:12px; border-radius:12px; font-size:14px;" placeholder="${ph}">
-                       <button onclick="currentFn()" style="background:var(--primary); border:none; width:45px; height:45px; border-radius:50%; color:white; flex-shrink:0;">➤</button>`;
+        f.innerHTML = `<input type="text" id="main-in" style="flex:1; background:#16162d; border:1px solid #2a2a4a; color:white; padding:12px; border-radius:12px;" placeholder="${ph}">
+                       <button onclick="currentFn()" style="background:var(--primary); border:none; width:45px; height:45px; border-radius:50%; color:white;">➤</button>`;
         window.currentFn = fn;
     }
 
-    function saveName() {
-        userName = document.getElementById('main-in').value;
-        if(!userName) return;
-        addBubble(userName, 'user');
-        saveLog("Iniciou");
-        renderStep(1);
-    }
+    function saveName() { userName = document.getElementById('main-in').value || "Cliente"; addBubble(userName, 'user'); saveLog("Iniciou Atendimento"); renderStep(1); }
 
     function renderStep(id) {
-        const s = chatData.find(x => x.ID == id);
-        if(!s) return;
+        const s = chatData.find(x => x.ID == id); if(!s) return;
+        const mostrarSacola = s.IsProduto === true || s.IsProduto === "TRUE" || s.IsProduto === "1";
+
         botSay(s.Resposta, s.ImagemURL, () => {
             const f = document.getElementById('footer'); f.innerHTML = '';
-            if(s.Opcoes) s.Opcoes.split(',').forEach(o => {
-                const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = o.trim();
-                b.onclick = () => {
-                    addBubble(o.trim(), 'user'); saveLog(o.trim());
-                    if(o.trim().toLowerCase() === 'voltar') renderStep(1);
-                    else {
-                        const next = chatData.find(x => x.Pergunta.toLowerCase() === o.trim().toLowerCase());
-                        if(next) renderStep(next.ID);
+            
+            if(s.Opcoes) {
+                s.Opcoes.split(',').forEach(o => {
+                    const txt = o.trim();
+                    if(!txt) return;
+                    const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = txt;
+                    b.onclick = () => {
+                        addBubble(txt, 'user'); saveLog(txt);
+                        if(txt.toLowerCase() === 'voltar') renderStep(1);
+                        else if(txt.toLowerCase() === 'suporte') startSupport();
+                        else if(txt.toLowerCase() === 'finalizar') startOrder();
+                        else { const next = chatData.find(x => x.Pergunta.toLowerCase() === txt.toLowerCase()); if(next) renderStep(next.ID); }
+                    };
+                    f.appendChild(b);
+                });
+            }
+
+            if(mostrarSacola) {
+                const cart = document.createElement('button'); cart.className = 'cart-btn'; cart.innerText = '🛍️';
+                cart.onclick = () => { 
+                    const nomeItem = s.Pergunta + (s.Preco ? ` (R$ ${s.Preco})` : '');
+                    if(!carrinho.includes(nomeItem)) { 
+                        carrinho.push(nomeItem); 
+                        addBubble(`🛍️ ${nomeItem} adicionado à sacola!`, 'user'); 
+                    } else {
+                        addBubble(`Este item já está na sacola!`, 'bot');
                     }
                 };
-                f.appendChild(b);
-            });
+                f.appendChild(cart);
+            }
         });
+    }
+
+    async function startOrder() {
+        if(carrinho.length === 0) { botSay("Sua sacola está vazia! Adicione produtos clicando na 🛍️ antes de finalizar."); return; }
+        botSay(`Sua sacola: **${carrinho.join(", ")}**. \nQual tamanho e cor?`);
+        renderInput(async () => {
+            const detalhes = document.getElementById('main-in').value; if(!detalhes) return;
+            addBubble(detalhes, 'user'); 
+            await saveLog("PRODS: " + carrinho.join(", ") + " | DETALHES: " + detalhes);
+            
+            botSay("Pedido anotado! Agora me informe seu WhatsApp para que um atendente te chame (DDD + Número):");
+            renderInput(async () => {
+                const telInput = document.getElementById('main-in').value;
+                const telLimpo = telInput.replace(/\D/g, '');
+                if(telLimpo.length < 10) { alert("Número inválido"); return; }
+                
+                addBubble(telLimpo, 'user'); 
+                await saveLog("WHATSAPP: " + telLimpo);
+                
+                botSay("Obrigado! Um atendente irá te chamar em breve para concluir o pedido.");
+                document.getElementById('footer').innerHTML = ''; 
+                
+                carrinho = []; 
+                setTimeout(() => renderStep(1), 5000);
+            }, "DDD + Número");
+        }, "Tamanho, cor...");
     }
 
     async function saveLog(m) { fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ sessao: session, nome: userName, mensagem: m })}); }
 
     function startSupport() {
-        botSay(`${userName}, digite seu WhatsApp para suporte:`);
+        botSay("Digite seu WhatsApp para que o atendente te chame:");
         renderInput(async () => {
-            const tel = document.getElementById('main-in').value.replace(/\D/g, '');
+            const tel = document.getElementById('main-in').value.replace(/\D/g, ''); 
             if(tel.length < 8) return;
-            addBubble(tel, 'user');
-            await saveLog("TEL: " + tel);
-            botSay("Deseja falar comigo por onde agora?", null, () => {
+            addBubble(tel, 'user'); await saveLog("SUPORTE SOLICITADO: " + tel);
+            botSay("Clique abaixo para iniciar a conversa agora ou aguarde o contato:", null, () => {
                 const f = document.getElementById('footer'); f.innerHTML = '';
-                const b1 = document.createElement('button'); b1.className = 'opt-btn'; b1.innerText = "WhatsApp";
-                b1.onclick = () => window.open(`https://api.whatsapp.com/send?phone=55${tel}`, '_blank');
-                const b2 = document.createElement('button'); b2.className = 'opt-btn'; b2.innerText = "Instagram";
-                b2.onclick = () => window.location.href = INSTAGRAM;
-                const b3 = document.createElement('button'); b3.className = 'opt-btn'; b3.innerText = "Voltar ao Chat";
-                b3.onclick = () => renderStep(1);
-                f.appendChild(b1); f.appendChild(b2); f.appendChild(b3);
+                const b1 = document.createElement('button'); b1.className='opt-btn'; b1.innerText="Falar Agora"; b1.onclick=()=>window.open(`https://api.whatsapp.com/send?phone=5551989066465`,'_blank');
+                const b2 = document.createElement('button'); b2.className='opt-btn'; b2.innerText="Voltar"; b2.onclick=()=>renderStep(1);
+                f.appendChild(b1); f.appendChild(b2);
             });
-        }, "DDD + Numero");
+        }, "DDD + Número");
     }
 
     function openModal(id) { closeModals(); document.getElementById(id).style.display = 'flex'; }
     function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
     function toggleHelp() { const b = document.getElementById('help-box'); b.style.display = b.style.display === 'none' ? 'block' : 'none'; }
     function login() { if(document.getElementById('admin-pass').value === '2027') openModal('modal-menu'); else alert("Erro"); }
+    
+    function togglePriceInput() {
+        const isChecked = document.getElementById('inp-is-prod').checked;
+        document.getElementById('price-field-container').style.display = isChecked ? 'block' : 'none';
+        updatePreview();
+    }
 
     function updatePreview() {
-        document.getElementById('pre-txt').innerText = document.getElementById('inp-r').value || "...";
+        document.getElementById('pre-txt').innerText = (document.getElementById('inp-r').value || "...").replace(/{nome}/g, userName);
         const img = document.getElementById('inp-img').value;
         const imgBox = document.getElementById('pre-img-box');
         if(img) { imgBox.style.display='block'; document.getElementById('pre-img').src=img; } else imgBox.style.display='none';
+        
         const bBox = document.getElementById('pre-btns'); bBox.innerHTML = '';
-        const opt = document.getElementById('inp-o').value;
-        if(opt) opt.split(',').forEach(o => {
-            const b = document.createElement('div'); b.className='opt-btn'; b.style.fontSize='8px'; b.innerText=o.trim();
-            bBox.appendChild(b);
+        let opt = document.getElementById('inp-o').value.trim();
+        
+        // Simular a lógica do servidor no Preview: Adicionar Voltar e Finalizar se não existirem
+        let btns = opt ? opt.split(',').map(x => x.trim()) : [];
+        if (!btns.some(x => x.toLowerCase() === 'voltar')) btns.push('Voltar');
+        if (!btns.some(x => x.toLowerCase() === 'finalizar')) btns.push('Finalizar');
+
+        btns.forEach(o => { 
+            const b = document.createElement('div'); b.className='opt-btn'; b.style.fontSize='9px'; b.innerText=o; bBox.appendChild(b); 
         });
+        
+        if(document.getElementById('inp-is-prod').checked) { 
+            const c = document.createElement('div'); c.className='cart-btn'; c.style.fontSize='9px'; c.innerText='🛍️'; bBox.appendChild(c); 
+        }
     }
 
     async function saveConfig() {
-        if(isBusy) return;
-        isBusy = true; document.getElementById('save-status').style.display = 'block';
-        const data = { tipo: 'config', id: document.getElementById('edit-id').value, pergunta: document.getElementById('inp-p').value, res: document.getElementById('inp-r').value, opcoes: document.getElementById('inp-o').value, img: document.getElementById('inp-img').value };
-        await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data)});
+        if(isBusy) return; isBusy = true; document.getElementById('save-status').style.display = 'block';
+        const data = { 
+            tipo: 'config', 
+            id: document.getElementById('edit-id').value, 
+            pergunta: document.getElementById('inp-p').value, 
+            res: document.getElementById('inp-r').value, 
+            opcoes: document.getElementById('inp-o').value, 
+            img: document.getElementById('inp-img').value, 
+            preco: document.getElementById('inp-price').value,
+            isProduto: document.getElementById('inp-is-prod').checked 
+        };
+        await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data)}); 
         location.reload();
     }
 
     function loadManager() {
-        openModal('modal-manager');
-        const l = document.getElementById('manager-list'); l.innerHTML = '';
+        openModal('modal-manager'); const l = document.getElementById('manager-list'); l.innerHTML = '';
         chatData.forEach(i => {
+            const isProd = i.IsProduto === true || i.IsProduto === "TRUE" || i.IsProduto === "1";
             const d = document.createElement('div'); d.className = 'item-row';
-            d.innerHTML = `<span>${i.Pergunta}</span><div style="display:flex; gap:5px;"><button class="opt-btn" style="padding:5px 8px; font-size:10px;" onclick='openConfig(${JSON.stringify(i).replace(/'/g, "&apos;")})'>Edit</button><button class="btn-del" onclick="deleteItem('${i.ID}')">X</button></div>`;
+            d.innerHTML = `<span>${i.Pergunta} ${isProd ? '🛍️' : ''}</span><div style="display:flex; gap:5px;"><button class="opt-btn" style="padding:5px 8px;" onclick='openConfig(${JSON.stringify(i).replace(/'/g, "&apos;")})'>Edit</button><button class="btn-del" onclick="deleteItem('${i.ID}')">X</button></div>`;
             l.appendChild(d);
         });
     }
 
-    async function deleteItem(id) { if(confirm("Apagar?")) { await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({tipo: 'delete', id: id})}); location.reload(); } }
+    async function deleteItem(id) { if(confirm("Apagar permanentemente?")) { await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({tipo: 'delete', id: id})}); location.reload(); } }
 
     async function loadHistory() {
-        openModal('modal-history');
-        const l = document.getElementById('history-list'); l.innerHTML = 'Carregando...';
-        const r = await fetch(API + "?res=logs"); const logs = await r.json();
-        l.innerHTML = '';
+        openModal('modal-history'); const l = document.getElementById('history-list'); l.innerHTML = 'Carregando...';
+        const r = await fetch(API + "?res=logs"); const logs = await r.json(); l.innerHTML = '';
         logs.reverse().forEach((row) => {
-            if(row[1] === "Sessao" || !row[2]) return;
-            let msg = row[3];
-            if(/\d{8,}/.test(msg)) {
-                const num = msg.match(/\d+/)[0];
-                msg = msg.replace(num, `<a href="https://api.whatsapp.com/send?phone=55${num}" target="_blank" style="color:var(--secondary); font-weight:bold">${num}</a>`);
+            if(!row[2]) return;
+            let msg = row[3]; let typeClass = '';
+            if(msg.includes("PRODS:") || msg.includes("WHATSAPP:")) typeClass = 'lead-order';
+            if(msg.includes("SUPORTE:")) typeClass = 'lead-support';
+            
+            const phoneMatch = msg.match(/\d{8,}/);
+            if(phoneMatch) { 
+                const num = phoneMatch[0]; 
+                msg = msg.replace(num, `<a href="https://api.whatsapp.com/send?phone=55${num}" target="_blank" style="color:white; font-weight:bold; text-decoration: underline;">${num}</a>`); 
             }
-            l.innerHTML += `<div style="background:#1f1f3d; padding:10px; border-radius:10px; margin-bottom:5px; font-size:11px"><b>${row[2]}</b>: ${msg}</div>`;
+
+            const date = row[0] ? new Date(row[0]).toLocaleString('pt-BR') : 'Agora';
+            l.innerHTML += `<div class="lead-item ${typeClass}"><span class="lead-date">${date}</span><b>${row[2]}</b>: ${msg}</div>`;
         });
     }
 
@@ -329,7 +355,18 @@
         document.getElementById('inp-r').value = item ? item.Resposta : "";
         document.getElementById('inp-o').value = item ? item.Opcoes : "";
         document.getElementById('inp-img').value = item ? (item.ImagemURL || "") : "";
-        updatePreview();
+        document.getElementById('inp-price').value = item ? (item.Preco || "") : "";
+        
+        const isP = item && (item.IsProduto === true || item.IsProduto === "TRUE" || item.IsProduto === "1");
+        document.getElementById('inp-is-prod').checked = isP;
+        
+        const sList = document.getElementById('suggestion-list'); sList.innerHTML = '';
+        chatData.forEach(c => {
+            const t = document.createElement('span'); t.className = 'sug-tag'; t.innerText = c.Pergunta;
+            t.onclick = () => { const i = document.getElementById('inp-o'); i.value += (i.value ? ', ' : '') + c.Pergunta; updatePreview(); };
+            sList.appendChild(t);
+        });
+        togglePriceInput();
     }
 
     init();
