@@ -29,8 +29,11 @@
         .bubble img { max-width: 100%; border-radius: 10px; margin-bottom: 8px; display: block; height: auto; }
         
         footer { background: #0f0f1f; padding: 12px; display: flex; justify-content: center; gap: 6px; border-top: 1px solid #2a2a4a; flex-wrap: wrap; flex-shrink: 0; }
-        .opt-btn { background: #252545; color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .opt-btn { background: #252545; color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; position: relative; }
         .cart-btn { background: var(--success); color: #000; border: none; padding: 10px 14px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+
+        /* Badge para contagem na sacola */
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 9px; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #0f0f1f; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 15px; }
         .modal-card { background: var(--surface); padding: 20px; border-radius: 20px; width: 100%; max-width: 450px; max-height: 90dvh; overflow-y: auto; }
@@ -154,7 +157,33 @@
     const API = "https://script.google.com/macros/s/AKfycbyPAHOcblYzGY1LqAThspHlazuXWUKp5TNbFoiRbTemjym2PBETi0BrJHgVKfGhz-Uu/exec"; 
     let chatData = [], userName = "Cliente", session = "S" + Date.now(), isBusy = false, carrinho = [];
 
-    async function init() { const r = await fetch(API); chatData = await r.json(); botSay("Olá! Qual o seu nome?"); renderInput(saveName, "Seu nome..."); }
+    // Função para aplicar máscara no telefone (Ajuste Novo)
+    function applyPhoneMask(v) {
+        v = v.replace(/\D/g, "");
+        if (v.length > 11) v = v.slice(0, 11);
+        v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+        v = v.replace(/(\d{5})(\d)/, "$1-$2");
+        return v;
+    }
+
+    async function init() { 
+        const r = await fetch(API); 
+        chatData = await r.json(); 
+        
+        // Recuperar dados salvos (Ajuste Novo)
+        const savedName = localStorage.getItem('mks_bot_name');
+        const savedCart = localStorage.getItem('mks_bot_cart');
+        if(savedCart) carrinho = JSON.parse(savedCart);
+
+        if(savedName) {
+            userName = savedName;
+            botSay(`Olá ${userName}, que bom te ver de novo! Como posso te ajudar hoje?`);
+            renderStep(1);
+        } else {
+            botSay("Olá! Qual o seu nome?"); 
+            renderInput(saveName, "Seu nome..."); 
+        }
+    }
 
     function botSay(t, img = null, cb = null) {
         document.getElementById('typing-indicator').style.display = 'block';
@@ -175,14 +204,25 @@
         w.appendChild(d); w.scrollTop = w.scrollHeight;
     }
 
-    function renderInput(fn, ph) {
+    function renderInput(fn, ph, isTel = false) {
         const f = document.getElementById('footer');
         f.innerHTML = `<input type="text" id="main-in" style="flex:1; background:#16162d; border:1px solid #2a2a4a; color:white; padding:12px; border-radius:12px;" placeholder="${ph}">
                        <button onclick="currentFn()" style="background:var(--primary); border:none; width:45px; height:45px; border-radius:50%; color:white;">➤</button>`;
+        const input = document.getElementById('main-in');
+        if(isTel) {
+            input.oninput = () => input.value = applyPhoneMask(input.value);
+            input.type = "tel";
+        }
         window.currentFn = fn;
     }
 
-    function saveName() { userName = document.getElementById('main-in').value || "Cliente"; addBubble(userName, 'user'); saveLog("Iniciou Atendimento"); renderStep(1); }
+    function saveName() { 
+        userName = document.getElementById('main-in').value || "Cliente"; 
+        localStorage.setItem('mks_bot_name', userName); // Salvar nome (Ajuste Novo)
+        addBubble(userName, 'user'); 
+        saveLog("Iniciou Atendimento"); 
+        renderStep(1); 
+    }
 
     function renderStep(id) {
         const s = chatData.find(x => x.ID == id); if(!s) return;
@@ -196,6 +236,15 @@
                     const txt = o.trim();
                     if(!txt) return;
                     const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = txt;
+                    
+                    // Adicionar Badge se houver itens (Ajuste Novo)
+                    if(txt.toLowerCase() === 'finalizar' && carrinho.length > 0) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge';
+                        badge.innerText = carrinho.length;
+                        b.appendChild(badge);
+                    }
+
                     b.onclick = () => {
                         addBubble(txt, 'user'); saveLog(txt);
                         if(txt.toLowerCase() === 'voltar') renderStep(1);
@@ -213,7 +262,9 @@
                     const nomeItem = s.Pergunta + (s.Preco ? ` (R$ ${s.Preco})` : '');
                     if(!carrinho.includes(nomeItem)) { 
                         carrinho.push(nomeItem); 
+                        localStorage.setItem('mks_bot_cart', JSON.stringify(carrinho)); // Salvar sacola (Ajuste Novo)
                         addBubble(`🛍️ ${nomeItem} adicionado à sacola!`, 'user'); 
+                        renderStep(id); // Recarregar para atualizar o badge no botão finalizar
                     } else {
                         addBubble(`Este item já está na sacola!`, 'bot');
                     }
@@ -231,21 +282,22 @@
             addBubble(detalhes, 'user'); 
             await saveLog("PRODS: " + carrinho.join(", ") + " | DETALHES: " + detalhes);
             
-            botSay("Pedido anotado! Agora me informe seu WhatsApp para que um atendente te chame (DDD + Número):");
+            botSay("Pedido anotado! Agora me informe seu WhatsApp para que um atendente te chame:");
             renderInput(async () => {
                 const telInput = document.getElementById('main-in').value;
                 const telLimpo = telInput.replace(/\D/g, '');
                 if(telLimpo.length < 10) { alert("Número inválido"); return; }
                 
-                addBubble(telLimpo, 'user'); 
+                addBubble(telInput, 'user'); 
                 await saveLog("WHATSAPP: " + telLimpo);
                 
                 botSay("Obrigado! Um atendente irá te chamar em breve para concluir o pedido.");
                 document.getElementById('footer').innerHTML = ''; 
                 
                 carrinho = []; 
+                localStorage.removeItem('mks_bot_cart'); // Limpar após finalizar
                 setTimeout(() => renderStep(1), 5000);
-            }, "DDD + Número");
+            }, "(DD) 00000-0000", true);
         }, "Tamanho, cor...");
     }
 
@@ -254,16 +306,17 @@
     function startSupport() {
         botSay("Digite seu WhatsApp para que o atendente te chame:");
         renderInput(async () => {
-            const tel = document.getElementById('main-in').value.replace(/\D/g, ''); 
-            if(tel.length < 8) return;
-            addBubble(tel, 'user'); await saveLog("SUPORTE SOLICITADO: " + tel);
+            const telOrig = document.getElementById('main-in').value;
+            const tel = telOrig.replace(/\D/g, ''); 
+            if(tel.length < 10) return;
+            addBubble(telOrig, 'user'); await saveLog("SUPORTE SOLICITADO: " + tel);
             botSay("Clique abaixo para iniciar a conversa agora ou aguarde o contato:", null, () => {
                 const f = document.getElementById('footer'); f.innerHTML = '';
                 const b1 = document.createElement('button'); b1.className='opt-btn'; b1.innerText="Falar Agora"; b1.onclick=()=>window.open(`https://api.whatsapp.com/send?phone=5551989066465`,'_blank');
                 const b2 = document.createElement('button'); b2.className='opt-btn'; b2.innerText="Voltar"; b2.onclick=()=>renderStep(1);
                 f.appendChild(b1); f.appendChild(b2);
             });
-        }, "DDD + Número");
+        }, "(DD) 00000-0000", true);
     }
 
     function openModal(id) { closeModals(); document.getElementById(id).style.display = 'flex'; }
@@ -286,7 +339,6 @@
         const bBox = document.getElementById('pre-btns'); bBox.innerHTML = '';
         let opt = document.getElementById('inp-o').value.trim();
         
-        // Simular a lógica do servidor no Preview: Adicionar Voltar e Finalizar se não existirem
         let btns = opt ? opt.split(',').map(x => x.trim()) : [];
         if (!btns.some(x => x.toLowerCase() === 'voltar')) btns.push('Voltar');
         if (!btns.some(x => x.toLowerCase() === 'finalizar')) btns.push('Finalizar');
@@ -344,12 +396,8 @@
             if(phoneMatch) { 
                 const num = phoneMatch[0];
                 const nomeCliente = row[2];
-                
-                // Extrair apenas PRODS e DETALHES do log original
                 let prodsPart = msgOriginal.match(/PRODS:.*?(?=\| WHATSAPP|$)/i);
                 let resumoPedido = prodsPart ? prodsPart[0].trim() : "Solicitação de contato";
-                
-                // Monta a mensagem curta com a confirmação final "Confere?"
                 const textoWhatsApp = encodeURIComponent(`Olá ${nomeCliente}, vi seu pedido aqui no sistema:\n\n${resumoPedido}\n\nConfere?`);
                 msgFormatada = msgOriginal.replace(num, `<a href="https://api.whatsapp.com/send?phone=55${num}&text=${textoWhatsApp}" target="_blank" style="color:white; font-weight:bold; text-decoration: underline;">${num}</a>`); 
             }
