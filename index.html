@@ -502,7 +502,7 @@
         if(carrinho.length === 0) { botSay("Sua sacola está vazia! Escolha um produto primeiro."); return; }
         let total = 0;
         let resumo = carrinho.map(i => { total += i.preco; return i.nome; }).join(", ");
-        botSay(`📋 **Pedido:** ${resumo}\n💰 **Total: R$ ${total.toFixed(2)}**\n\nPor favor, informe **Tamanho e Cor**:`);
+        botSay(`📋 **Pedido:** ${resumo}\n💰 **Total: R$ ${total.toFixed(2)}**\n\nPor favor, informe **Tamanho e Cor dos produtos**:`);
         renderInput(async () => {
             const detalhesUsuario = document.getElementById('main-in').value.trim(); 
             if(!detalhesUsuario) return;
