@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MKS Smart Bot - Premium Edition</title>
+    <title>ChatBot - MKS Tech Solutions</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -131,11 +131,26 @@
         
         #save-status { display: none; background: var(--success); color: #000; text-align: center; padding: 10px; border-radius: 10px; margin-top: 10px; font-weight: bold; }
         
+        /* CORES DOS LEADS NO RELATÓRIO */
         .lead-item { background: #1f1f3d; padding: 15px; border-radius: 15px; margin-bottom: 10px; font-size: 12px; border-left: 5px solid var(--secondary); }
-        .lead-order { border-left-color: var(--warning); background: #3d3d1f; color: #fff; } 
-        .lead-support { border-left-color: var(--danger); background: #3d1f1f; color: #fff; } 
+        .lead-order { border-left-color: var(--warning) !important; background: #4a4a1a !important; color: #fff; } 
+        .lead-support { border-left-color: var(--danger) !important; background: #4a1a1a !important; color: #fff; } 
         .lead-date { font-size: 10px; color: #bbb; display: block; margin-bottom: 5px; }
-        .whatsapp-link { color: var(--success); font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px; background: rgba(0,255,136,0.1); padding: 2px 8px; border-radius: 5px; }
+        
+        .whatsapp-link-btn { 
+            display: block; 
+            width: 100%; 
+            background: var(--success); 
+            color: #000; 
+            text-align: center; 
+            padding: 12px; 
+            border-radius: 10px; 
+            text-decoration: none; 
+            font-weight: 800; 
+            margin-top: 10px; 
+            font-size: 12px;
+            text-transform: uppercase;
+        }
         
         .item-row { background: #1f1f3d; padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .btn-del { background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
@@ -155,9 +170,9 @@
 
 <header>
     <div class="bot-info">
-        <img src="https://i.imgur.com/2X8sQ3C.png" alt="MKS Logo">
+        <img src="https://lh3.googleusercontent.com/p/AF1QipOnOrkvmOfLwxKf1Iwi7zoPJ0li3dLCo-xKQ4Tm=s680-w680-h510-rw" alt="Logo">
         <div class="bot-status">
-            <h1>MKS Sales</h1>
+            <h1>MKS Tech Solutions 🤖</h1>
             <span class="status-tag"><span class="dot">●</span> Online</span>
         </div>
     </div>
@@ -177,9 +192,9 @@
 
 <div id="modal-auth" class="modal">
     <div class="modal-card" style="text-align: center;">
-        <h2>Admin Access</h2>
-        <p style="font-size: 12px; color: #888; margin-bottom: 20px;">Insira a senha de gerenciamento</p>
-        <input type="password" id="admin-pass" style="text-align:center" placeholder="••••">
+        <h2>Acesso restrito</h2>
+        <p style="font-size: 12px; color: #888; margin-bottom: 20px;">Insira a senha de acesso</p>
+        <input type="password" id="admin-pass" style="text-align:center" placeholder="Senha">
         <button class="opt-btn" style="width:100%; background:var(--primary); margin-bottom: 10px;" onclick="login()">Entrar</button>
         <button onclick="closeModals()" style="background:none; border:none; color:#888; cursor:pointer;">Cancelar</button>
     </div>
@@ -259,11 +274,9 @@
     let chatData = [], userName = "Cliente", session = "S" + Date.now(), isBusy = false, carrinho = [];
     let timerCarrinho;
 
-    // --- LÓGICA DE LIMPEZA E TEMPO ---
     function limparCarrinho() {
         carrinho = [];
         localStorage.removeItem('mks_bot_cart');
-        console.log("Carrinho limpo por inatividade ou conclusão.");
     }
 
     function resetTimer() {
@@ -273,10 +286,9 @@
                 limparCarrinho();
                 botSay("Seu carrinho foi esvaziado por inatividade. Caso queira algo, é só pedir!");
             }
-        }, 15 * 60 * 1000); // 15 minutos
+        }, 15 * 60 * 1000);
     }
 
-    // Monitorar atividade para o timer
     window.onload = resetTimer;
     window.onmousedown = resetTimer;
     window.ontouchstart = resetTimer;
@@ -294,11 +306,9 @@
         try {
             const r = await fetch(API); 
             chatData = await r.json(); 
-            
             const savedName = localStorage.getItem('mks_bot_name');
             const savedCart = localStorage.getItem('mks_bot_cart');
             if(savedCart) carrinho = JSON.parse(savedCart);
-
             if(savedName) {
                 userName = savedName;
                 botSay(`Olá **${userName}**, que bom ter você de volta! Em que posso ajudar?`);
@@ -307,33 +317,27 @@
                 botSay("Olá! Bem-vindo à MKS. Para começarmos, como posso te chamar?"); 
                 renderInput(saveName, "Digite seu nome..."); 
             }
-        } catch (e) {
-            botSay("Erro ao conectar ao servidor.");
-        }
+        } catch (e) { botSay("Erro ao conectar ao servidor."); }
     }
 
     function botSay(t, img = null, cb = null) {
         document.getElementById('typing-indicator').style.display = 'flex';
         const windowChat = document.getElementById('chat-window');
         windowChat.scrollTop = windowChat.scrollHeight;
-
         setTimeout(() => {
             document.getElementById('typing-indicator').style.display = 'none';
             const w = document.getElementById('chat-window');
             const d = document.createElement('div'); d.className = 'bubble bot';
-            
             if(img) {
                 const image = document.createElement('img');
                 image.src = img;
                 image.onclick = () => window.open(img, '_blank');
                 d.appendChild(image);
             }
-
             const span = document.createElement('span');
             let text = t.replace(/{nome}/g, userName).replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
             span.innerHTML = text;
             d.appendChild(span);
-            
             w.appendChild(d); 
             w.scrollTop = w.scrollHeight;
             if(cb) cb();
@@ -357,7 +361,6 @@
         const input = document.getElementById('main-in');
         input.focus();
         input.onkeypress = (e) => { if(e.key === 'Enter') window.currentFn(); };
-        
         if(isTel) {
             input.oninput = () => input.value = applyPhoneMask(input.value);
             input.type = "tel";
@@ -378,28 +381,19 @@
     function renderStep(id) {
         const s = chatData.find(x => x.ID == id); 
         if(!s) return;
-        
         const isProd = s.IsProduto === true || s.IsProduto === "TRUE" || s.IsProduto === "1";
-
         botSay(s.Resposta, s.ImagemURL, () => {
-            const f = document.getElementById('footer'); 
-            f.innerHTML = '';
-            
+            const f = document.getElementById('footer'); f.innerHTML = '';
             if(s.Opcoes) {
                 s.Opcoes.split(',').forEach(o => {
                     const txt = o.trim();
                     if(!txt) return;
-                    const b = document.createElement('button'); 
-                    b.className = 'opt-btn'; 
-                    b.innerText = txt;
-                    
+                    const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = txt;
                     if(txt.toLowerCase() === 'finalizar' && carrinho.length > 0) {
                         const badge = document.createElement('span');
-                        badge.className = 'badge';
-                        badge.innerText = carrinho.length;
+                        badge.className = 'badge'; badge.innerText = carrinho.length;
                         b.appendChild(badge);
                     }
-
                     b.onclick = () => {
                         addBubble(txt, 'user'); 
                         saveLog(txt);
@@ -414,11 +408,8 @@
                     f.appendChild(b);
                 });
             }
-
             if(isProd) {
-                const cart = document.createElement('button'); 
-                cart.className = 'cart-btn'; 
-                cart.innerHTML = 'Adicionar 🛍️';
+                const cart = document.createElement('button'); cart.className = 'cart-btn'; cart.innerHTML = 'Adicionar 🛍️';
                 cart.onclick = () => { 
                     const precoLimpo = s.Preco ? parseFloat(s.Preco.toString().replace(',','.')) : 0;
                     const itemObj = { nome: s.Pergunta, preco: precoLimpo };
@@ -432,70 +423,37 @@
         });
     }
 
-    // --- FINALIZAÇÃO DO PEDIDO COM DETALHES NO LINK ---
     async function startOrder() {
-        if(carrinho.length === 0) { 
-            botSay("Sua sacola está vazia! Escolha um produto primeiro."); 
-            return; 
-        }
-
+        if(carrinho.length === 0) { botSay("Sua sacola está vazia! Escolha um produto primeiro."); return; }
         let total = 0;
-        let resumo = carrinho.map(i => {
-            total += i.preco;
-            return i.nome;
-        }).join(", ");
-
+        let resumo = carrinho.map(i => { total += i.preco; return i.nome; }).join(", ");
         botSay(`📋 **Pedido:** ${resumo}\n💰 **Total: R$ ${total.toFixed(2)}**\n\nPor favor, informe **Tamanho e Cor**:`);
-        
         renderInput(async () => {
             const detalhesUsuario = document.getElementById('main-in').value.trim(); 
             if(!detalhesUsuario) return;
             addBubble(detalhesUsuario, 'user'); 
-            
             botSay("Ótimo! Agora, qual seu **WhatsApp**?");
-            
             renderInput(async () => {
                 const telInput = document.getElementById('main-in').value;
                 const telLimpo = telInput.replace(/\D/g, '');
                 if(telLimpo.length < 10) return;
-                
                 addBubble(telInput, 'user'); 
-                await saveLog(`PEDIDO FINALIZADO: ${resumo} | DETALHES: ${detalhesUsuario} | WHATSAPP: ${telLimpo}`);
-
-                // Gerar Link do WhatsApp
-                const msg = `Olá! Gostaria de confirmar meu pedido:\n\n` +
-                            `🛍️ *Pedido:* ${resumo}\n` +
-                            `🎨 *Detalhes:* ${detalhesUsuario}\n` +
-                            `💰 *Total:* R$ ${total.toFixed(2)}\n\n` +
-                            `*Confere ?*`;
                 
-                const linkWA = `https://api.whatsapp.com/send?phone=5551989066465&text=${encodeURIComponent(msg)}`;
+                // ENVIANDO LOG COM TEXTO PADRÃO "PEDIDO"
+                await saveLog(`PEDIDO FINALIZADO: ITENS: ${resumo} | DETALHES: ${detalhesUsuario} | WHATSAPP: ${telLimpo}`);
 
-                botSay(`Tudo pronto, **${userName}**! Clique abaixo para nos enviar os detalhes e finalizar.`);
+                botSay("Seu pedido foi enviado com sucesso. Um atendente irá te retornar em instantes para confirmar tudo!");
                 
                 const f = document.getElementById('footer'); f.innerHTML = '';
-                const btnWA = document.createElement('button');
-                btnWA.className = 'opt-btn';
-                btnWA.style.background = 'var(--success)';
-                btnWA.style.color = '#000';
-                btnWA.innerHTML = "Confirmar no WhatsApp 📲";
-                btnWA.onclick = () => {
-                    window.open(linkWA, '_blank');
-                    limparCarrinho(); // Limpa ao finalizar
-                    setTimeout(() => location.reload(), 3000);
-                };
-                f.appendChild(btnWA);
+                limparCarrinho();
+                setTimeout(() => location.reload(), 8000);
 
             }, "(00) 00000-0000", true);
         }, "Ex: Tamanho G, cor Preta");
     }
 
     async function saveLog(m) { 
-        fetch(API, { 
-            method: 'POST', 
-            mode: 'no-cors', 
-            body: JSON.stringify({ sessao: session, nome: userName, mensagem: m })
-        }); 
+        fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ sessao: session, nome: userName, mensagem: m }) }); 
     }
 
     function startSupport() {
@@ -505,16 +463,10 @@
             const tel = telOrig.replace(/\D/g, ''); 
             if(tel.length < 10) return;
             addBubble(telOrig, 'user'); 
-            
-            let resumoS = carrinho.length > 0 ? carrinho.map(i => i.nome).join(", ") : "Nenhum";
-            const msgS = `Olá, preciso de suporte.\n👤 Cliente: ${userName}\n🛍️ No Carrinho: ${resumoS}\n\nConfere ?`;
-            
-            botSay("Clique abaixo para falar com um consultor.");
+            await saveLog(`SUPORTE SOLICITADO | WHATSAPP: ${tel}`);
+            botSay("Solicitação enviada! Um atendente falará com você em breve.");
             const f = document.getElementById('footer'); f.innerHTML = '';
-            const b1 = document.createElement('button'); b1.className='opt-btn'; b1.style.background= 'var(--success)'; b1.style.color='#000'; b1.innerText="Chamar no WhatsApp"; 
-            b1.onclick=()=>window.open(`https://api.whatsapp.com/send?phone=5551989066465&text=${encodeURIComponent(msgS)}`,'_blank');
-            const b2 = document.createElement('button'); b2.className='opt-btn'; b2.innerText="Voltar"; b2.onclick=()=>renderStep(1);
-            f.appendChild(b1); f.appendChild(b2);
+            setTimeout(() => renderStep(1), 3000);
         }, "(00) 00000-0000", true);
     }
 
@@ -534,7 +486,6 @@
         const img = document.getElementById('inp-img').value;
         const imgBox = document.getElementById('pre-img-box');
         if(img) { imgBox.style.display='block'; document.getElementById('pre-img').src=img; } else imgBox.style.display='none';
-        
         const bBox = document.getElementById('pre-btns'); bBox.innerHTML = '';
         let opt = document.getElementById('inp-o').value.trim();
         let btns = opt ? opt.split(',').map(x => x.trim()) : [];
@@ -548,26 +499,13 @@
 
     async function saveConfig() {
         if(isBusy) return; isBusy = true; 
-        const btn = document.getElementById('btn-save');
-        btn.innerText = "ENVIANDO...";
-
+        const btn = document.getElementById('btn-save'); btn.innerText = "ENVIANDO...";
         let finalId = document.getElementById('edit-id').value;
         if(!finalId) {
             const lastId = chatData.length > 0 ? Math.max(...chatData.map(x => parseInt(x.ID) || 0)) : 0;
             finalId = lastId + 1;
         }
-        
-        const data = { 
-            tipo: 'config', 
-            id: finalId, 
-            pergunta: document.getElementById('inp-p').value, 
-            res: document.getElementById('inp-r').value, 
-            opcoes: document.getElementById('inp-o').value, 
-            img: document.getElementById('inp-img').value, 
-            preco: document.getElementById('inp-price').value,
-            isProduto: document.getElementById('inp-is-prod').checked 
-        };
-        
+        const data = { tipo: 'config', id: finalId, pergunta: document.getElementById('inp-p').value, res: document.getElementById('inp-r').value, opcoes: document.getElementById('inp-o').value, img: document.getElementById('inp-img').value, preco: document.getElementById('inp-price').value, isProduto: document.getElementById('inp-is-prod').checked };
         await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data)}); 
         document.getElementById('save-status').style.display = 'block';
         setTimeout(() => location.reload(), 1000);
@@ -585,7 +523,7 @@
                     <small style="color:var(--secondary)">${isProd ? '🛍️ R$ '+i.Preco : '💬 Fluxo'}</small>
                 </div>
                 <div style="display:flex; gap:5px;">
-                    <button class="opt-btn" style="padding:5px 10px;" onclick='openConfig(${JSON.stringify(i).replace(/'/g, "&apos;")})'>Edit</button>
+                    <button class="opt-btn" style="padding:5px 10px;" onclick='openConfig(${JSON.stringify(i).replace(/'/g, "\\'")})'>Edit</button>
                     <button class="btn-del" onclick="deleteItem('${i.ID}')">X</button>
                 </div>`;
             l.appendChild(d);
@@ -603,12 +541,39 @@
             l.innerHTML = '';
             logs.reverse().forEach((row) => {
                 if(!row[2]) return;
-                let msgOriginal = row[3]; 
-                let typeClass = (msgOriginal.includes("PEDIDO:")) ? 'lead-order' : (msgOriginal.includes("SUPORTE:") ? 'lead-support' : '');
+                let msgOriginal = row[3] || ""; 
+                let clienteNome = row[2];
+                let msgUpper = msgOriginal.toUpperCase();
+                
+                // LÓGICA DE COR REFORÇADA: Verifica se a mensagem contém as palavras chave
+                let typeClass = "";
+                if(msgUpper.includes("PEDIDO")) typeClass = 'lead-order';
+                else if(msgUpper.includes("SUPORTE")) typeClass = 'lead-support';
+
                 const phoneMatch = msgOriginal.match(/\d{10,13}/);
-                let waLink = phoneMatch ? `<br><a href="https://api.whatsapp.com/send?phone=55${phoneMatch[0]}" target="_blank" class="whatsapp-link">Abrir WhatsApp 📲</a>` : '';
-                const date = row[0] ? new Date(row[0]).toLocaleString('pt-BR') : 'Recent';
-                l.innerHTML += `<div class="lead-item ${typeClass}"><span class="lead-date">${date}</span><b>${row[2]}</b>: ${msgOriginal}${waLink}</div>`;
+                
+                let respondBtn = '';
+                if(phoneMatch) {
+                    const fone = phoneMatch[0];
+                    let itensTxt = "Não informado";
+                    let detalhesTxt = "Não informado";
+                    
+                    if(msgOriginal.includes("ITENS:")) itensTxt = msgOriginal.split("ITENS:")[1].split("|")[0].trim();
+                    if(msgOriginal.includes("DETALHES:")) detalhesTxt = msgOriginal.split("DETALHES:")[1].split("|")[0].trim();
+
+                    const msgWA = `Olá ${clienteNome}, confere seu carrinho:\n\n🛍️ ITENS: ${itensTxt}\n🎨 Detalhes: ${detalhesTxt}\n\nPode confirmar se é isto mesmo?`;
+                    const linkWA = `https://api.whatsapp.com/send?phone=55${fone}&text=${encodeURIComponent(msgWA)}`;
+                    respondBtn = `<a href="${linkWA}" target="_blank" class="whatsapp-link-btn">RESPONDER WHATSAPP 📲</a>`;
+                }
+
+                const date = row[0] ? new Date(row[0]).toLocaleString('pt-BR') : 'Recente';
+                l.innerHTML += `
+                    <div class="lead-item ${typeClass}">
+                        <span class="lead-date">${date}</span>
+                        <b>CLIENTE: ${clienteNome}</b><br>
+                        <small>${msgOriginal}</small>
+                        ${respondBtn}
+                    </div>`;
             });
         } catch(e) { l.innerHTML = "Erro ao carregar histórico."; }
     }
@@ -622,15 +587,10 @@
         document.getElementById('inp-img').value = item ? (item.ImagemURL || "") : "";
         document.getElementById('inp-price').value = item ? (item.Preco || "") : "";
         document.getElementById('inp-is-prod').checked = item && (item.IsProduto === true || item.IsProduto === "TRUE" || item.IsProduto === "1");
-        
         const sList = document.getElementById('suggestion-list'); sList.innerHTML = '';
         chatData.forEach(c => {
             const t = document.createElement('span'); t.className = 'sug-tag'; t.innerText = c.Pergunta;
-            t.onclick = () => { 
-                const i = document.getElementById('inp-o'); 
-                i.value += (i.value ? ', ' : '') + c.Pergunta; 
-                updatePreview(); 
-            };
+            t.onclick = () => { const i = document.getElementById('inp-o'); i.value += (i.value ? ', ' : '') + c.Pergunta; updatePreview(); };
             sList.appendChild(t);
         });
         togglePriceInput();
