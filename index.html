@@ -206,22 +206,21 @@
         
         <div id="help-box" class="help-box">
             <h4>💡 Dicas de Configuração</h4>
-            <p>• <b>ID:</b> Gerado automaticamente se deixado em branco.</p>
-            <p>• <b>Gatilho:</b> O texto exato do botão que leva a esta mensagem.</p>
-            <p>• <b>Variáveis:</b> Use <code>{nome}</code> para falar o nome do cliente.</p>
+            <p>• <b>ID:</b> Gerado sequencialmente de forma automática.</p>
+            <p>• <b>Gatilho:</b> Texto que aparece no botão.</p>
         </div>
 
-        <label>ID da Pergunta (Sequencial)</label>
-        <input type="number" id="edit-id" placeholder="Automático" readonly style="background: #1e1e36; opacity: 0.7;">
+        <label>ID da Pergunta</label>
+        <input type="text" id="edit-id" readonly placeholder="Automático" style="background:#0b0b1a; opacity:0.6">
         
         <label>Nome do Botão (Gatilho)</label>
-        <input type="text" id="inp-p" oninput="updatePreview()" placeholder="Ex: Ver Catálogo">
+        <input type="text" id="inp-p" oninput="updatePreview()" placeholder="Ex: Camiseta Polo">
         
         <label>URL da Imagem</label>
         <input type="text" id="inp-img" oninput="updatePreview()" placeholder="https://...">
         
         <label>Resposta do Assistente</label>
-        <textarea id="inp-r" rows="3" oninput="updatePreview()" placeholder="Olá {nome}, veja nossas opções..."></textarea>
+        <textarea id="inp-r" rows="3" oninput="updatePreview()" placeholder="Olá {nome}, este produto..."></textarea>
         
         <div id="price-field-container" style="display:none">
             <label>Preço Unitário (R$)</label>
@@ -230,7 +229,7 @@
 
         <label>Botões de Resposta (Caminhos)</label>
         <div id="suggestion-list" class="suggestion-box"></div>
-        <input type="text" id="inp-o" oninput="updatePreview()" placeholder="Opção 1, Opção 2...">
+        <input type="text" id="inp-o" oninput="updatePreview()" placeholder="P, M, G...">
         
         <label class="check-group">
             <input type="checkbox" id="inp-is-prod" onchange="togglePriceInput()">
@@ -258,6 +257,30 @@
 <script>
     const API = "https://script.google.com/macros/s/AKfycbyPAHOcblYzGY1LqAThspHlazuXWUKp5TNbFoiRbTemjym2PBETi0BrJHgVKfGhz-Uu/exec"; 
     let chatData = [], userName = "Cliente", session = "S" + Date.now(), isBusy = false, carrinho = [];
+    let timerCarrinho;
+
+    // --- LÓGICA DE LIMPEZA E TEMPO ---
+    function limparCarrinho() {
+        carrinho = [];
+        localStorage.removeItem('mks_bot_cart');
+        console.log("Carrinho limpo por inatividade ou conclusão.");
+    }
+
+    function resetTimer() {
+        clearTimeout(timerCarrinho);
+        timerCarrinho = setTimeout(() => {
+            if(carrinho.length > 0) {
+                limparCarrinho();
+                botSay("Seu carrinho foi esvaziado por inatividade. Caso queira algo, é só pedir!");
+            }
+        }, 15 * 60 * 1000); // 15 minutos
+    }
+
+    // Monitorar atividade para o timer
+    window.onload = resetTimer;
+    window.onmousedown = resetTimer;
+    window.ontouchstart = resetTimer;
+    window.onkeypress = resetTimer;
 
     function applyPhoneMask(v) {
         v = v.replace(/\D/g, "");
@@ -285,7 +308,7 @@
                 renderInput(saveName, "Digite seu nome..."); 
             }
         } catch (e) {
-            botSay("Erro ao conectar ao servidor. Verifique sua conexão.");
+            botSay("Erro ao conectar ao servidor.");
         }
     }
 
@@ -399,10 +422,8 @@
                 cart.onclick = () => { 
                     const precoLimpo = s.Preco ? parseFloat(s.Preco.toString().replace(',','.')) : 0;
                     const itemObj = { nome: s.Pergunta, preco: precoLimpo };
-                    
                     carrinho.push(itemObj); 
                     localStorage.setItem('mks_bot_cart', JSON.stringify(carrinho));
-                    
                     addBubble(`🛍️ ${s.Pergunta} adicionado!`, 'user'); 
                     renderStep(id); 
                 };
@@ -411,6 +432,7 @@
         });
     }
 
+    // --- FINALIZAÇÃO DO PEDIDO COM DETALHES NO LINK ---
     async function startOrder() {
         if(carrinho.length === 0) { 
             botSay("Sua sacola está vazia! Escolha um produto primeiro."); 
@@ -420,47 +442,52 @@
         let total = 0;
         let resumo = carrinho.map(i => {
             total += i.preco;
-            return `${i.nome} (R$ ${i.preco.toFixed(2)})`;
+            return i.nome;
         }).join(", ");
 
-        botSay(`📋 **Resumo do Pedido:**\n${resumo}\n\n💰 **Total: R$ ${total.toFixed(2)}**\n\nPor favor, informe o **tamanho e a cor** desejada:`);
+        botSay(`📋 **Pedido:** ${resumo}\n💰 **Total: R$ ${total.toFixed(2)}**\n\nPor favor, informe **Tamanho e Cor**:`);
         
         renderInput(async () => {
-            const detalhes = document.getElementById('main-in').value; 
-            if(!detalhes) return;
-            addBubble(detalhes, 'user'); 
-            await saveLog(`PEDIDO: ${resumo} | TOTAL: ${total.toFixed(2)} | OBS: ${detalhes}`);
+            const detalhesUsuario = document.getElementById('main-in').value.trim(); 
+            if(!detalhesUsuario) return;
+            addBubble(detalhesUsuario, 'user'); 
             
-            botSay("Perfeito! Para finalizar, qual seu **WhatsApp**?");
+            botSay("Ótimo! Agora, qual seu **WhatsApp**?");
+            
             renderInput(async () => {
                 const telInput = document.getElementById('main-in').value;
                 const telLimpo = telInput.replace(/\D/g, '');
-                if(telLimpo.length < 10) { alert("Número inválido"); return; }
+                if(telLimpo.length < 10) return;
                 
                 addBubble(telInput, 'user'); 
-                await saveLog("WHATSAPP: " + telLimpo);
+                await saveLog(`PEDIDO FINALIZADO: ${resumo} | DETALHES: ${detalhesUsuario} | WHATSAPP: ${telLimpo}`);
+
+                // Gerar Link do WhatsApp
+                const msg = `Olá! Gostaria de confirmar meu pedido:\n\n` +
+                            `🛍️ *Pedido:* ${resumo}\n` +
+                            `🎨 *Detalhes:* ${detalhesUsuario}\n` +
+                            `💰 *Total:* R$ ${total.toFixed(2)}\n\n` +
+                            `*Confere ?*`;
                 
-                // Link formatado com Pedido e Detalhes
-                let msgWhats = encodeURIComponent(`Olá, gostaria de confirmar meu pedido:\n\n🛍️ Pedido: ${resumo}\n🎨 Detalhes: ${detalhes}\n💰 Total: R$ ${total.toFixed(2)}\n\nConfere ?`);
-                
-                botSay(`Obrigado, **${userName}**! Clique no botão abaixo para nos enviar o pedido no WhatsApp.`);
+                const linkWA = `https://api.whatsapp.com/send?phone=5551989066465&text=${encodeURIComponent(msg)}`;
+
+                botSay(`Tudo pronto, **${userName}**! Clique abaixo para nos enviar os detalhes e finalizar.`);
                 
                 const f = document.getElementById('footer'); f.innerHTML = '';
-                const bConfirm = document.createElement('button');
-                bConfirm.className = 'opt-btn';
-                bConfirm.style.background = 'var(--success)';
-                bConfirm.style.color = '#000';
-                bConfirm.innerText = "Enviar Pedido 📲";
-                bConfirm.onclick = () => {
-                    window.open(`https://api.whatsapp.com/send?phone=5551989066465&text=${msgWhats}`, '_blank');
-                    carrinho = []; 
-                    localStorage.removeItem('mks_bot_cart'); 
-                    setTimeout(() => renderStep(1), 3000);
+                const btnWA = document.createElement('button');
+                btnWA.className = 'opt-btn';
+                btnWA.style.background = 'var(--success)';
+                btnWA.style.color = '#000';
+                btnWA.innerHTML = "Confirmar no WhatsApp 📲";
+                btnWA.onclick = () => {
+                    window.open(linkWA, '_blank');
+                    limparCarrinho(); // Limpa ao finalizar
+                    setTimeout(() => location.reload(), 3000);
                 };
-                f.appendChild(bConfirm);
+                f.appendChild(btnWA);
 
             }, "(00) 00000-0000", true);
-        }, "Tamanho G, cor preta...");
+        }, "Ex: Tamanho G, cor Preta");
     }
 
     async function saveLog(m) { 
@@ -478,20 +505,14 @@
             const tel = telOrig.replace(/\D/g, ''); 
             if(tel.length < 10) return;
             addBubble(telOrig, 'user'); 
-            await saveLog("SUPORTE SOLICITADO: " + tel);
             
-            let total = 0;
-            let resumoPedido = carrinho.length > 0 ? carrinho.map(i => {
-                total += i.preco;
-                return i.nome;
-            }).join(", ") : "Nenhum item na sacola";
-
-            let mensagemWhats = encodeURIComponent(`Olá, preciso de suporte.\n\n👤 Cliente: ${userName}\n🛍️ No carrinho: ${resumoPedido}\n\nConfere ?`);
+            let resumoS = carrinho.length > 0 ? carrinho.map(i => i.nome).join(", ") : "Nenhum";
+            const msgS = `Olá, preciso de suporte.\n👤 Cliente: ${userName}\n🛍️ No Carrinho: ${resumoS}\n\nConfere ?`;
             
-            botSay("Clique abaixo para chamar nosso suporte agora.");
+            botSay("Clique abaixo para falar com um consultor.");
             const f = document.getElementById('footer'); f.innerHTML = '';
             const b1 = document.createElement('button'); b1.className='opt-btn'; b1.style.background= 'var(--success)'; b1.style.color='#000'; b1.innerText="Chamar no WhatsApp"; 
-            b1.onclick=()=>window.open(`https://api.whatsapp.com/send?phone=5551989066465&text=${mensagemWhats}`,'_blank');
+            b1.onclick=()=>window.open(`https://api.whatsapp.com/send?phone=5551989066465&text=${encodeURIComponent(msgS)}`,'_blank');
             const b2 = document.createElement('button'); b2.className='opt-btn'; b2.innerText="Voltar"; b2.onclick=()=>renderStep(1);
             f.appendChild(b1); f.appendChild(b2);
         }, "(00) 00000-0000", true);
@@ -517,11 +538,9 @@
         const bBox = document.getElementById('pre-btns'); bBox.innerHTML = '';
         let opt = document.getElementById('inp-o').value.trim();
         let btns = opt ? opt.split(',').map(x => x.trim()) : [];
-        
         btns.forEach(o => { 
             const b = document.createElement('div'); b.className='opt-btn'; b.style.fontSize='9px'; b.innerText=o; bBox.appendChild(b); 
         });
-        
         if(document.getElementById('inp-is-prod').checked) { 
             const c = document.createElement('div'); c.className='cart-btn'; c.style.fontSize='9px'; c.innerText='🛍️ Add'; bBox.appendChild(c); 
         }
@@ -533,8 +552,6 @@
         btn.innerText = "ENVIANDO...";
 
         let finalId = document.getElementById('edit-id').value;
-        
-        // Se for novo item (ID vazio), calcula o próximo ID sequencial
         if(!finalId) {
             const lastId = chatData.length > 0 ? Math.max(...chatData.map(x => parseInt(x.ID) || 0)) : 0;
             finalId = lastId + 1;
@@ -587,27 +604,11 @@
             logs.reverse().forEach((row) => {
                 if(!row[2]) return;
                 let msgOriginal = row[3]; 
-                let typeClass = '';
-                
-                if(msgOriginal.includes("PEDIDO:")) {
-                    typeClass = 'lead-order'; 
-                } else if(msgOriginal.includes("SUPORTE:") || msgOriginal.includes("WHATSAPP:")) {
-                    typeClass = 'lead-support'; 
-                }
-
-                let waLink = '';
+                let typeClass = (msgOriginal.includes("PEDIDO:")) ? 'lead-order' : (msgOriginal.includes("SUPORTE:") ? 'lead-support' : '');
                 const phoneMatch = msgOriginal.match(/\d{10,13}/);
-                if(phoneMatch) {
-                    waLink = `<br><a href="https://api.whatsapp.com/send?phone=55${phoneMatch[0]}" target="_blank" class="whatsapp-link">Abrir WhatsApp 📲</a>`;
-                }
-                
+                let waLink = phoneMatch ? `<br><a href="https://api.whatsapp.com/send?phone=55${phoneMatch[0]}" target="_blank" class="whatsapp-link">Abrir WhatsApp 📲</a>` : '';
                 const date = row[0] ? new Date(row[0]).toLocaleString('pt-BR') : 'Recent';
-                l.innerHTML += `
-                    <div class="lead-item ${typeClass}">
-                        <span class="lead-date">${date}</span>
-                        <b>${row[2]}</b>: ${msgOriginal}
-                        ${waLink}
-                    </div>`;
+                l.innerHTML += `<div class="lead-item ${typeClass}"><span class="lead-date">${date}</span><b>${row[2]}</b>: ${msgOriginal}${waLink}</div>`;
             });
         } catch(e) { l.innerHTML = "Erro ao carregar histórico."; }
     }
@@ -620,9 +621,7 @@
         document.getElementById('inp-o').value = item ? item.Opcoes : "";
         document.getElementById('inp-img').value = item ? (item.ImagemURL || "") : "";
         document.getElementById('inp-price').value = item ? (item.Preco || "") : "";
-        
-        const isP = item && (item.IsProduto === true || item.IsProduto === "TRUE" || item.IsProduto === "1");
-        document.getElementById('inp-is-prod').checked = isP;
+        document.getElementById('inp-is-prod').checked = item && (item.IsProduto === true || item.IsProduto === "TRUE" || item.IsProduto === "1");
         
         const sList = document.getElementById('suggestion-list'); sList.innerHTML = '';
         chatData.forEach(c => {
