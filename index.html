@@ -132,8 +132,8 @@
         #save-status { display: none; background: var(--success); color: #000; text-align: center; padding: 10px; border-radius: 10px; margin-top: 10px; font-weight: bold; }
         
         .lead-item { background: #1f1f3d; padding: 15px; border-radius: 15px; margin-bottom: 10px; font-size: 12px; border-left: 5px solid var(--secondary); }
-        .lead-order { border-left-color: var(--warning); background: #3d3d1f; color: #fff; } /* Fundo amarelado escuro para visibilidade */
-        .lead-support { border-left-color: var(--danger); background: #3d1f1f; color: #fff; } /* Fundo avermelhado escuro para visibilidade */
+        .lead-order { border-left-color: var(--warning); background: #3d3d1f; color: #fff; } 
+        .lead-support { border-left-color: var(--danger); background: #3d1f1f; color: #fff; } 
         .lead-date { font-size: 10px; color: #bbb; display: block; margin-bottom: 5px; }
         .whatsapp-link { color: var(--success); font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px; background: rgba(0,255,136,0.1); padding: 2px 8px; border-radius: 5px; }
         
@@ -206,12 +206,14 @@
         
         <div id="help-box" class="help-box">
             <h4>💡 Dicas de Configuração</h4>
+            <p>• <b>ID:</b> Gerado automaticamente se deixado em branco.</p>
             <p>• <b>Gatilho:</b> O texto exato do botão que leva a esta mensagem.</p>
             <p>• <b>Variáveis:</b> Use <code>{nome}</code> para falar o nome do cliente.</p>
-            <p>• <b>Caminhos:</b> Separe as opções por vírgula (Ex: Azul, Vermelho).</p>
         </div>
 
-        <input type="hidden" id="edit-id">
+        <label>ID da Pergunta (Sequencial)</label>
+        <input type="number" id="edit-id" placeholder="Automático" readonly style="background: #1e1e36; opacity: 0.7;">
+        
         <label>Nome do Botão (Gatilho)</label>
         <input type="text" id="inp-p" oninput="updatePreview()" placeholder="Ex: Ver Catálogo">
         
@@ -429,7 +431,7 @@
             addBubble(detalhes, 'user'); 
             await saveLog(`PEDIDO: ${resumo} | TOTAL: ${total.toFixed(2)} | OBS: ${detalhes}`);
             
-            botSay("Perfeito! Para finalizar, qual seu **WhatsApp**? (Um consultor entrará em contato)");
+            botSay("Perfeito! Para finalizar, qual seu **WhatsApp**?");
             renderInput(async () => {
                 const telInput = document.getElementById('main-in').value;
                 const telLimpo = telInput.replace(/\D/g, '');
@@ -438,12 +440,25 @@
                 addBubble(telInput, 'user'); 
                 await saveLog("WHATSAPP: " + telLimpo);
                 
-                botSay(`Obrigado, **${userName}**! Seu pedido foi enviado. Em instantes falaremos com você no número ${telInput}.`);
-                document.getElementById('footer').innerHTML = ''; 
+                // Link formatado com Pedido e Detalhes
+                let msgWhats = encodeURIComponent(`Olá, gostaria de confirmar meu pedido:\n\n🛍️ Pedido: ${resumo}\n🎨 Detalhes: ${detalhes}\n💰 Total: R$ ${total.toFixed(2)}\n\nConfere ?`);
                 
-                carrinho = []; 
-                localStorage.removeItem('mks_bot_cart'); 
-                setTimeout(() => renderStep(1), 6000);
+                botSay(`Obrigado, **${userName}**! Clique no botão abaixo para nos enviar o pedido no WhatsApp.`);
+                
+                const f = document.getElementById('footer'); f.innerHTML = '';
+                const bConfirm = document.createElement('button');
+                bConfirm.className = 'opt-btn';
+                bConfirm.style.background = 'var(--success)';
+                bConfirm.style.color = '#000';
+                bConfirm.innerText = "Enviar Pedido 📲";
+                bConfirm.onclick = () => {
+                    window.open(`https://api.whatsapp.com/send?phone=5551989066465&text=${msgWhats}`, '_blank');
+                    carrinho = []; 
+                    localStorage.removeItem('mks_bot_cart'); 
+                    setTimeout(() => renderStep(1), 3000);
+                };
+                f.appendChild(bConfirm);
+
             }, "(00) 00000-0000", true);
         }, "Tamanho G, cor preta...");
     }
@@ -465,16 +480,15 @@
             addBubble(telOrig, 'user'); 
             await saveLog("SUPORTE SOLICITADO: " + tel);
             
-            // Gerar resumo para o link do WhatsApp
             let total = 0;
             let resumoPedido = carrinho.length > 0 ? carrinho.map(i => {
                 total += i.preco;
                 return i.nome;
             }).join(", ") : "Nenhum item na sacola";
 
-            let mensagemWhats = encodeURIComponent(`Olá, preciso de suporte.\n\n👤 Cliente: ${userName}\n🛍️ Pedido atual: ${resumoPedido}\n💰 Valor Total: R$ ${total.toFixed(2)}`);
+            let mensagemWhats = encodeURIComponent(`Olá, preciso de suporte.\n\n👤 Cliente: ${userName}\n🛍️ No carrinho: ${resumoPedido}\n\nConfere ?`);
             
-            botSay("Clique no botão abaixo para falar agora ou aguarde nossa chamada.");
+            botSay("Clique abaixo para chamar nosso suporte agora.");
             const f = document.getElementById('footer'); f.innerHTML = '';
             const b1 = document.createElement('button'); b1.className='opt-btn'; b1.style.background= 'var(--success)'; b1.style.color='#000'; b1.innerText="Chamar no WhatsApp"; 
             b1.onclick=()=>window.open(`https://api.whatsapp.com/send?phone=5551989066465&text=${mensagemWhats}`,'_blank');
@@ -517,10 +531,18 @@
         if(isBusy) return; isBusy = true; 
         const btn = document.getElementById('btn-save');
         btn.innerText = "ENVIANDO...";
+
+        let finalId = document.getElementById('edit-id').value;
+        
+        // Se for novo item (ID vazio), calcula o próximo ID sequencial
+        if(!finalId) {
+            const lastId = chatData.length > 0 ? Math.max(...chatData.map(x => parseInt(x.ID) || 0)) : 0;
+            finalId = lastId + 1;
+        }
         
         const data = { 
             tipo: 'config', 
-            id: document.getElementById('edit-id').value, 
+            id: finalId, 
             pergunta: document.getElementById('inp-p').value, 
             res: document.getElementById('inp-r').value, 
             opcoes: document.getElementById('inp-o').value, 
@@ -567,11 +589,10 @@
                 let msgOriginal = row[3]; 
                 let typeClass = '';
                 
-                // Lógica de cores conforme solicitado
                 if(msgOriginal.includes("PEDIDO:")) {
-                    typeClass = 'lead-order'; // Amarelo
+                    typeClass = 'lead-order'; 
                 } else if(msgOriginal.includes("SUPORTE:") || msgOriginal.includes("WHATSAPP:")) {
-                    typeClass = 'lead-support'; // Vermelho
+                    typeClass = 'lead-support'; 
                 }
 
                 let waLink = '';
