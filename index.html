@@ -164,13 +164,61 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+        /* DASHBOARD MELHORADO */
+        .skeleton {
+            background: #1f1f3d;
+            background: linear-gradient(90deg, #1f1f3d 25%, #2a2a4a 50%, #1f1f3d 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 10px;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .dash-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .dash-card {
+            background: #111126;
+            padding: 12px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #2a2a4a;
+        }
+        .dash-card h4 { font-size: 8px; color: var(--secondary); text-transform: uppercase; margin-bottom: 3px; }
+        .dash-card p { font-size: 14px; font-weight: bold; color: white; }
+        
+        .full-card { grid-column: span 2; background: #1a1a35; border-color: var(--primary); }
+        
+        /* MINI GRÁFICO CSS */
+        .chart-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 40px;
+            margin-top: 10px;
+            gap: 2px;
+        }
+        .bar {
+            background: var(--secondary);
+            width: 100%;
+            border-radius: 2px 2px 0 0;
+            transition: height 0.5s ease;
+        }
     </style>
 </head>
 <body>
 
 <header>
     <div class="bot-info">
-        <img src="https://lh3.googleusercontent.com/p/AF1QipOnOrkvmOfLwxKf1Iwi7zoPJ0li3dLCo-xKQ4Tm=s680-w680-h510-rw" alt="Logo">
+        <a href="https://www.instagram.com/mkstechsolutions"><img src="https://lh3.googleusercontent.com/p/AF1QipOnOrkvmOfLwxKf1Iwi7zoPJ0li3dLCo-xKQ4Tm=s680-w680-h510-rw" alt="Logo"></a>
         <div class="bot-status">
             <h1>MKS Tech Solutions 🤖</h1>
             <span class="status-tag"><span class="dot">●</span> Online</span>
@@ -202,8 +250,27 @@
 
 <div id="modal-menu" class="modal">
     <div class="modal-card">
-        <h3 style="margin-bottom: 20px; text-align: center;">Painel de Controle</h3>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px">
+        <h3 style="margin-bottom: 15px; text-align: center;">Painel de Controle</h3>
+        
+        <div class="dash-container">
+            <div class="dash-card">
+                <h4>Vendas</h4>
+                <p id="dash-vendas">R$ 0,00</p>
+            </div>
+            <div class="dash-card">
+                <h4>Cliques Chat</h4>
+                <p id="dash-cliques">0</p>
+            </div>
+            <div class="dash-card full-card">
+                <h4>🔥 Top Produto</h4>
+                <p id="dash-top-prod" style="font-size:12px; color: var(--success)">-</p>
+            </div>
+        </div>
+
+        <label style="text-align:center">Tendência (Últimos Logs)</label>
+        <div id="mini-chart" class="chart-container"></div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:20px">
             <div onclick="openConfig()" style="background:#252545; padding:20px; border-radius:15px; text-align:center; cursor:pointer">➕<br><small>Novo Item</small></div>
             <div onclick="loadManager()" style="background:#252545; padding:20px; border-radius:15px; text-align:center; cursor:pointer">⚙️<br><small>Gerenciar</small></div>
             <div onclick="loadHistory()" style="background:#252545; padding:20px; border-radius:15px; text-align:center; cursor:pointer">📜<br><small>Relatórios</small></div>
@@ -270,9 +337,13 @@
 <div id="modal-history" class="modal"><div class="modal-card"><h2>📜 Leads e Pedidos</h2><div id="history-list" style="margin:15px 0; max-height:350px; overflow-y:auto"></div><button onclick="openModal('modal-menu')" class="opt-btn" style="width:100%">Voltar</button></div></div>
 
 <script>
-    const API = "https://script.google.com/macros/s/AKfycbyPAHOcblYzGY1LqAThspHlazuXWUKp5TNbFoiRbTemjym2PBETi0BrJHgVKfGhz-Uu/exec"; 
+    const API = "https://script.google.com/macros/s/AKfycbw-WMXYiAa8ED_sugbA2aUDdKt0oEsQHFYoEAQY_FCXt9aVjSYTnWmwG6wHq0BvDy4m/exec"; 
     let chatData = [], userName = "Cliente", session = "S" + Date.now(), isBusy = false, carrinho = [];
     let timerCarrinho;
+
+    const audioPop = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+
+    function playNotify() { audioPop.volume = 0.3; audioPop.play().catch(() => {}); }
 
     function limparCarrinho() {
         carrinho = [];
@@ -326,6 +397,7 @@
         windowChat.scrollTop = windowChat.scrollHeight;
         setTimeout(() => {
             document.getElementById('typing-indicator').style.display = 'none';
+            playNotify();
             const w = document.getElementById('chat-window');
             const d = document.createElement('div'); d.className = 'bubble bot';
             if(img) {
@@ -370,7 +442,10 @@
 
     function saveName() { 
         const val = document.getElementById('main-in').value.trim();
-        if(!val) return;
+        if(!val || /^\d+$/.test(val)) {
+            alert("Por favor, digite um nome válido.");
+            return;
+        }
         userName = val;
         localStorage.setItem('mks_bot_name', userName);
         addBubble(userName, 'user'); 
@@ -439,8 +514,7 @@
                 if(telLimpo.length < 10) return;
                 addBubble(telInput, 'user'); 
                 
-                // ENVIANDO LOG COM TEXTO PADRÃO "PEDIDO"
-                await saveLog(`PEDIDO FINALIZADO: ITENS: ${resumo} | DETALHES: ${detalhesUsuario} | WHATSAPP: ${telLimpo}`);
+                await saveLog(`PEDIDO FINALIZADO: VALOR: ${total.toFixed(2)} | ITENS: ${resumo} | DETALHES: ${detalhesUsuario} | WHATSAPP: ${telLimpo}`);
 
                 botSay("Seu pedido foi enviado com sucesso. Um atendente irá te retornar em instantes para confirmar tudo!");
                 
@@ -470,11 +544,54 @@
         }, "(00) 00000-0000", true);
     }
 
-    function openModal(id) { closeModals(); document.getElementById(id).style.display = 'flex'; }
+    function openModal(id) { closeModals(); document.getElementById(id).style.display = 'flex'; if(id === 'modal-menu') calculateMetrics(); }
     function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
     function toggleHelp() { const b = document.getElementById('help-box'); b.style.display = b.style.display === 'none' ? 'block' : 'none'; }
     function login() { if(document.getElementById('admin-pass').value === '2027') openModal('modal-menu'); else alert("Senha Incorreta"); }
     
+    async function calculateMetrics() {
+        try {
+            const r = await fetch(API + "?res=logs");
+            const logs = await r.json();
+            let totalVendas = 0;
+            let totalCliquesChat = 0;
+            let produtosContagem = {};
+            let tendenciaDados = [0,0,0,0,0,0,0,0,0,0]; 
+
+            logs.forEach((l, index) => {
+                const msg = (l[3] || "").toUpperCase();
+                if(msg.includes("INICIOU ATENDIMENTO")) totalCliquesChat++;
+                if(msg.includes("PEDIDO FINALIZADO")) {
+                    const vMatch = msg.match(/VALOR: ([\d.]+)/);
+                    if(vMatch) totalVendas += parseFloat(vMatch[1]);
+                    const iMatch = msg.match(/ITENS: (.*?) \|/);
+                    if(iMatch) {
+                        iMatch[1].split(',').forEach(prod => {
+                            let p = prod.trim();
+                            produtosContagem[p] = (produtosContagem[p] || 0) + 1;
+                        });
+                    }
+                }
+                let bin = Math.floor((index / logs.length) * 10);
+                tendenciaDados[bin]++;
+            });
+
+            document.getElementById('dash-vendas').innerText = `R$ ${totalVendas.toFixed(2)}`;
+            document.getElementById('dash-cliques').innerText = totalCliquesChat;
+            let topProd = Object.keys(produtosContagem).reduce((a, b) => produtosContagem[a] > produtosContagem[b] ? a : b, "-");
+            document.getElementById('dash-top-prod').innerText = topProd !== "-" ? `${topProd} (${produtosContagem[topProd]}x)` : "-";
+
+            const chart = document.getElementById('mini-chart'); chart.innerHTML = '';
+            const maxVal = Math.max(...tendenciaDados);
+            tendenciaDados.forEach(v => {
+                const h = maxVal > 0 ? (v / maxVal) * 100 : 0;
+                const b = document.createElement('div'); b.className = 'bar';
+                b.style.height = `${h}%`;
+                chart.appendChild(b);
+            });
+        } catch(e) { console.error(e); }
+    }
+
     function togglePriceInput() {
         const isChecked = document.getElementById('inp-is-prod').checked;
         document.getElementById('price-field-container').style.display = isChecked ? 'block' : 'none';
@@ -500,11 +617,15 @@
     async function saveConfig() {
         if(isBusy) return; isBusy = true; 
         const btn = document.getElementById('btn-save'); btn.innerText = "ENVIANDO...";
+        
         let finalId = document.getElementById('edit-id').value;
+        // Se o campo ID estiver vazio, calcula o próximo ID automático
         if(!finalId) {
-            const lastId = chatData.length > 0 ? Math.max(...chatData.map(x => parseInt(x.ID) || 0)) : 0;
-            finalId = lastId + 1;
+            const idsExistentes = chatData.map(x => parseInt(x.ID)).filter(n => !isNaN(n));
+            const maxId = idsExistentes.length > 0 ? Math.max(...idsExistentes) : 0;
+            finalId = maxId + 1;
         }
+
         const data = { tipo: 'config', id: finalId, pergunta: document.getElementById('inp-p').value, res: document.getElementById('inp-r').value, opcoes: document.getElementById('inp-o').value, img: document.getElementById('inp-img').value, preco: document.getElementById('inp-price').value, isProduto: document.getElementById('inp-is-prod').checked };
         await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data)}); 
         document.getElementById('save-status').style.display = 'block';
@@ -534,7 +655,8 @@
 
     async function loadHistory() {
         openModal('modal-history'); 
-        const l = document.getElementById('history-list'); l.innerHTML = '<p style="text-align:center">Buscando dados...</p>';
+        const l = document.getElementById('history-list'); 
+        l.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
         try {
             const r = await fetch(API + "?res=logs"); 
             const logs = await r.json(); 
@@ -544,28 +666,21 @@
                 let msgOriginal = row[3] || ""; 
                 let clienteNome = row[2];
                 let msgUpper = msgOriginal.toUpperCase();
-                
-                // LÓGICA DE COR REFORÇADA: Verifica se a mensagem contém as palavras chave
                 let typeClass = "";
                 if(msgUpper.includes("PEDIDO")) typeClass = 'lead-order';
                 else if(msgUpper.includes("SUPORTE")) typeClass = 'lead-support';
-
                 const phoneMatch = msgOriginal.match(/\d{10,13}/);
-                
                 let respondBtn = '';
                 if(phoneMatch) {
                     const fone = phoneMatch[0];
                     let itensTxt = "Não informado";
                     let detalhesTxt = "Não informado";
-                    
                     if(msgOriginal.includes("ITENS:")) itensTxt = msgOriginal.split("ITENS:")[1].split("|")[0].trim();
                     if(msgOriginal.includes("DETALHES:")) detalhesTxt = msgOriginal.split("DETALHES:")[1].split("|")[0].trim();
-
                     const msgWA = `Olá ${clienteNome}, confere seu carrinho:\n\n🛍️ ITENS: ${itensTxt}\n🎨 Detalhes: ${detalhesTxt}\n\nPode confirmar se é isto mesmo?`;
                     const linkWA = `https://api.whatsapp.com/send?phone=55${fone}&text=${encodeURIComponent(msgWA)}`;
                     respondBtn = `<a href="${linkWA}" target="_blank" class="whatsapp-link-btn">RESPONDER WHATSAPP 📲</a>`;
                 }
-
                 const date = row[0] ? new Date(row[0]).toLocaleString('pt-BR') : 'Recente';
                 l.innerHTML += `
                     <div class="lead-item ${typeClass}">
@@ -580,13 +695,23 @@
 
     function openConfig(item = null) {
         openModal('modal-form');
-        document.getElementById('edit-id').value = item ? item.ID : "";
+        
+        // Se for um novo item (item == null), sugere o próximo ID
+        if(!item) {
+            const idsExistentes = chatData.map(x => parseInt(x.ID)).filter(n => !isNaN(n));
+            const nextId = idsExistentes.length > 0 ? Math.max(...idsExistentes) + 1 : 1;
+            document.getElementById('edit-id').value = nextId;
+        } else {
+            document.getElementById('edit-id').value = item.ID;
+        }
+
         document.getElementById('inp-p').value = item ? item.Pergunta : "";
         document.getElementById('inp-r').value = item ? item.Resposta : "";
         document.getElementById('inp-o').value = item ? item.Opcoes : "";
         document.getElementById('inp-img').value = item ? (item.ImagemURL || "") : "";
         document.getElementById('inp-price').value = item ? (item.Preco || "") : "";
         document.getElementById('inp-is-prod').checked = item && (item.IsProduto === true || item.IsProduto === "TRUE" || item.IsProduto === "1");
+        
         const sList = document.getElementById('suggestion-list'); sList.innerHTML = '';
         chatData.forEach(c => {
             const t = document.createElement('span'); t.className = 'sug-tag'; t.innerText = c.Pergunta;
@@ -598,5 +723,3 @@
 
     init();
 </script>
-</body>
-</html>
